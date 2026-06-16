@@ -1,0 +1,48 @@
+[build-system]
+requires      = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name            = "trex-engine"
+version         = "2.0.0"
+description     = "Streaming technical indicator engine — production-grade, Python 3.12+"
+readme          = "README.md"
+requires-python = ">=3.12"
+license         = { text = "MIT" }
+dependencies    = []
+
+[project.optional-dependencies]
+postgres = ["psycopg2-binary>=2.9"]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.112",
+    "ruff>=0.8",
+    "mypy>=1.13",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trex"]
+
+[tool.ruff]
+src            = ["src"]
+line-length    = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "N"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version         = "3.12"
+strict                 = true
+warn_return_any        = true
+warn_unused_ignores    = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts   = "-v --tb=short"
