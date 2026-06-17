@@ -282,8 +282,8 @@ def rsi(
     listener:        Callable[[Any], None] | None = None,
 ) -> ListenerKey:
     """RSI (Wilder EMA)."""
-    from trex.indic.momentum.rsi import Rsi
-    return _register(Rsi, symbol, timeframe, listener,
+    from trex.indic.momentum.rsi import RSI
+    return _register(RSI, symbol, timeframe, listener,
                      period=period, value_extractor=value_extractor)
 
 

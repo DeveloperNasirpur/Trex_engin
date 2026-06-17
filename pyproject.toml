@@ -1,15 +1,24 @@
 [build-system]
-requires      = ["hatchling"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name            = "trex-engine"
-version         = "2.0.0"
-description     = "Streaming technical indicator engine — production-grade, Python 3.12+"
-readme          = "README.md"
+name = "trex-engine"
+version = "2.0.0"
+description = "Streaming technical indicator engine — production-grade, Python 3.12+"
+readme = "README.md"
 requires-python = ">=3.12"
-license         = { text = "MIT" }
-dependencies    = []
+license = { text = "MIT" }
+dependencies = []
+
+authors = [
+    { name = "nasirpoor", email = "javaddeveloper4@gmail.com" }
+]
+
+[project.urls]
+Homepage = "https://github.com/DeveloperNasirpur/Trex_engin"
+Repository = "https://github.com/DeveloperNasirpur/Trex_engin"
+# Documentation = "..."   # اگر داشتی اضافه کن
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary>=2.9"]
@@ -21,12 +30,23 @@ dev = [
     "mypy>=1.13",
 ]
 
+# ====================== Hatch Configuration ======================
 [tool.hatch.build.targets.wheel]
 packages = ["src/trex"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/trex",
+    "tests",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+]
+
+# ====================== Tool Configurations ======================
 [tool.ruff]
-src            = ["src"]
-line-length    = 100
+src = ["src"]
+line-length = 100
 target-version = "py312"
 
 [tool.ruff.lint]
@@ -37,12 +57,12 @@ ignore = []
 "tests/**" = ["S101"]
 
 [tool.mypy]
-python_version         = "3.12"
-strict                 = true
-warn_return_any        = true
-warn_unused_ignores    = true
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts   = "-v --tb=short"
+addopts = "-v --tb=short"

@@ -13,7 +13,7 @@ from trex.base.ohlcv import ValueExtractor, OHLCV
 from trex.engine.indicator import Indicator
 
 
-class Rsi(Indicator):
+class RSI(Indicator):
     """RSI (Relative Strength Index) using Wilder's Smoothed Moving Average.
 
     Output: ``float`` ∈ [0, 100]

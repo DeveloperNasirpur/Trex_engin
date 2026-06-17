@@ -55,10 +55,10 @@ from collections.abc import Callable
 from typing import Any
 
 from trex.server.server import TrexServer
-from trex.application.session import TrexSession
 from trex.domain.types import (
     Bar, Drawing, Point, SeriesDef, ChartType, ToastKind,
 )
+from trex.server.session import TrexSession
 
 log = logging.getLogger("trex.sync")
 
