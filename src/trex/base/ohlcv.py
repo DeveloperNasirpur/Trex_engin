@@ -56,6 +56,20 @@ class OHLCV:
             symbol=data.get("symbol", "BTCUSDT"),
         )
 
+    @staticmethod
+    def from_bar(bar: Any, *, symbol: str, str_time: str = "1m", timeframe: int = 1) -> "OHLCV":
+        """Build an OHLCV from a ``trex.domain.types.Bar`` (unix-seconds timestamp)."""
+        o, c = float(bar.open), float(bar.close)
+        return OHLCV(
+            open=o, high=float(bar.high), low=float(bar.low), close=c,
+            volume=float(bar.volume),
+            time=datetime.utcfromtimestamp(bar.time),
+            side=0 if o > c else 1,
+            timeframe=timeframe,
+            str_time=str_time,
+            symbol=symbol,
+        )
+
 
 # ── Factory ───────────────────────────────────────────────────────────────────
 
