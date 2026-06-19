@@ -30,6 +30,8 @@ class WilliamsR(Indicator):
     Receives raw OHLCV bars.
     Output: ``float`` ∈ [−100, 0]  (first emitted after ``period`` ticks)
     """
+    _ind_name   = "WR"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -74,4 +76,4 @@ class WilliamsR(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.williams_r(self.period)]
+        return [Oscillator.williams_r(self.period, key=self.indicator_key())]

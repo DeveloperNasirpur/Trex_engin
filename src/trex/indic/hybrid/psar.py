@@ -48,6 +48,8 @@ class ParabolicSAR(Indicator):
     step   : AF increment  (default 0.02)
     max_af : Maximum AF    (default 0.20)
     """
+    _ind_name   = "PSAR"
+    _key_params = ("step", "max_af")
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -143,9 +145,9 @@ class ParabolicSAR(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.psar(self.step, self.max_af)]
+        return [Overlay.psar(self.step, self.max_af, key=self.indicator_key())]
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
         color = "#089981" if value.is_uptrend else "#F23645"
-        return {"psar": [Point(time=timestamp, value=value.sar, color=color)]}
+        return {self.indicator_key(): [Point(time=timestamp, value=value.sar, color=color)]}

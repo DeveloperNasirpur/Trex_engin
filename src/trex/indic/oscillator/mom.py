@@ -26,6 +26,8 @@ class Momentum(Indicator):
 
     Output: ``float``  (first emitted after ``period + 1`` ticks)
     """
+    _ind_name   = "MOM"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -69,4 +71,4 @@ class Momentum(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.momentum(self.period)]
+        return [Oscillator.momentum(self.period, key=self.indicator_key())]

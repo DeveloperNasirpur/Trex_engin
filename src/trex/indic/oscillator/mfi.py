@@ -31,6 +31,8 @@ class MFI(Indicator):
     Receives raw OHLCV bars.
     Output: ``float`` ∈ [0, 100]  (first emitted after ``period + 1`` ticks)
     """
+    _ind_name   = "MFI"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -100,4 +102,4 @@ class MFI(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Volume
-        return [Volume.mfi(self.period)]
+        return [Volume.mfi(self.period, key=self.indicator_key())]

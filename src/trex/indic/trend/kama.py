@@ -39,6 +39,8 @@ class KAMA(Indicator):
 
     Output: ``float``  (first emitted after ``er_period + 1`` ticks)
     """
+    _ind_name   = "KAMA"
+    _key_params = ("er_period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -108,4 +110,4 @@ class KAMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.kama(self.er_period)]
+        return [Overlay.kama(self.er_period, key=self.indicator_key())]

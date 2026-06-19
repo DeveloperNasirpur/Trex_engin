@@ -50,6 +50,8 @@ class Stochastic(Indicator):
     k_period : look-back for %K  (default 14)
     d_period : SMA period for %D  (default 3)
     """
+    _ind_name   = "STOCH"
+    _key_params = ("k_period", "d_period")
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -113,11 +115,13 @@ class Stochastic(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return Oscillator.stochastic(self.k_period, d=self.d_period)
+        return Oscillator.stochastic(self.k_period, d=self.d_period,
+                                     key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
+        prefix = self.indicator_key()
         return {
-            f"stoch_k": [Point(time=timestamp, value=value.k)],
-            f"stoch_d": [Point(time=timestamp, value=value.d)],
+            f"{prefix}_k": [Point(time=timestamp, value=value.k)],
+            f"{prefix}_d": [Point(time=timestamp, value=value.d)],
         }

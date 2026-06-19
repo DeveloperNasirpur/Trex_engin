@@ -53,6 +53,8 @@ class Supertrend(Indicator):
     period     : ATR period  (default 10)
     multiplier : band width multiplier  (default 3.0)
     """
+    _ind_name   = "ST"
+    _key_params = ("period", "multiplier")
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -139,11 +141,11 @@ class Supertrend(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.supertrend(self.period, self.multiplier)]
+        return [Overlay.supertrend(self.period, self.multiplier, key=self.indicator_key())]
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
         color = "#089981" if value.is_uptrend else "#F23645"
-        return {f"st_{self.period}_{self.multiplier}": [
+        return {self.indicator_key(): [
             Point(time=timestamp, value=value.value, color=color)
         ]}

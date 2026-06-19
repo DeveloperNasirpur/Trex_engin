@@ -30,6 +30,8 @@ class CMO(Indicator):
 
     Output: ``float`` ∈ [−100, 100]  (first emitted after ``period + 1`` ticks)
     """
+    _ind_name   = "CMO"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -89,4 +91,4 @@ class CMO(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.cmo(self.period)]
+        return [Oscillator.cmo(self.period, key=self.indicator_key())]

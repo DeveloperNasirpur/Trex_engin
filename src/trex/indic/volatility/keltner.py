@@ -49,6 +49,8 @@ class KeltnerChannel(Indicator):
     atr_period : ATR period  (default 10)
     mult       : ATR multiplier  (default 2.0)
     """
+    _ind_name   = "KC"
+    _key_params = ("period", "atr_period", "mult")
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -114,11 +116,11 @@ class KeltnerChannel(Indicator):
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return Overlay.keltner(self.period, self.mult,
-                               key_prefix=f"kc_{self.period}")
+                               key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
-        prefix = f"kc_{self.period}"
+        prefix = self.indicator_key()
         return {
             f"{prefix}_upper":  [Point(time=timestamp, value=value.upper)],
             f"{prefix}_mid":    [Point(time=timestamp, value=value.middle)],

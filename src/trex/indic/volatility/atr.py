@@ -32,6 +32,8 @@ class Atr(Indicator):
         ATR₀ = mean(TR[0 … period−1])          ← simple seed
         ATRₙ = (ATRₙ₋₁ × (period−1) + TRₙ) / period
     """
+    _ind_name   = "ATR"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -94,4 +96,4 @@ class Atr(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.atr(self.period)]
+        return [Oscillator.atr(self.period, key=self.indicator_key())]

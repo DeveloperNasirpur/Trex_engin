@@ -48,6 +48,8 @@ class BollingerBands(Indicator):
     period : look-back window  (default 20)
     mult   : standard-deviation multiplier  (default 2.0)
     """
+    _ind_name   = "BB"
+    _key_params = ("period", "mult")
     def payload_extract(self, ohlcv: OHLCV):
         pass
 
@@ -111,11 +113,11 @@ class BollingerBands(Indicator):
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return Overlay.bollinger(self.period, self.mult,
-                                 key_prefix=f"bb_{self.period}")
+                                 key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
-        prefix = f"bb_{self.period}"
+        prefix = self.indicator_key()
         return {
             f"{prefix}_upper":  [Point(time=timestamp, value=value.upper)],
             f"{prefix}_mid":    [Point(time=timestamp, value=value.middle)],

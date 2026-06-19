@@ -31,6 +31,8 @@ class TRIX(Indicator):
 
     Output: ``float``  (first emitted after ``3 × period + 1`` ticks)
     """
+    _ind_name   = "TRIX"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -76,4 +78,4 @@ class TRIX(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.trix(self.period)]
+        return [Oscillator.trix(self.period, key=self.indicator_key())]

@@ -35,6 +35,8 @@ class TEMA(Indicator):
 
     Output: ``float``  (first emitted after ``3 × period`` ticks)
     """
+    _ind_name   = "TEMA"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -110,4 +112,4 @@ class TEMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.tema(self.period)]
+        return [Overlay.tema(self.period, key=self.indicator_key())]

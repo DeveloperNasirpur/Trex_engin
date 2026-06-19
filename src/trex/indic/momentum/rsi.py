@@ -21,6 +21,8 @@ class RSI(Indicator):
     Seeding: The first ``period`` values are averaged into ``avg_gain`` /
     ``avg_loss`` using a simple mean of absolute changes.
     """
+    _ind_name   = "RSI"
+    _key_params = ("period",)
 
     def init_depends(self) -> None:
         pass
@@ -86,4 +88,4 @@ class RSI(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.rsi(self.period)]
+        return [Oscillator.rsi(self.period, key=self.indicator_key())]

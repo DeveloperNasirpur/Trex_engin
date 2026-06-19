@@ -38,6 +38,8 @@ class Aroon(Indicator):
     Receives raw OHLCV bars.
     Output: ``AroonVal``  (first emitted after ``period + 1`` ticks)
     """
+    _ind_name   = "AROON"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -89,11 +91,12 @@ class Aroon(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return Oscillator.aroon(self.period)
+        return Oscillator.aroon(self.period, key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
+        prefix = self.indicator_key()
         return {
-            f"aroon_up":   [Point(time=timestamp, value=value.up)],
-            f"aroon_down": [Point(time=timestamp, value=value.down)],
+            f"{prefix}_up":   [Point(time=timestamp, value=value.up)],
+            f"{prefix}_down": [Point(time=timestamp, value=value.down)],
         }

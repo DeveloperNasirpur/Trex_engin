@@ -49,6 +49,8 @@ class Ichimoku(Indicator):
     kijun_period  : Base line period  (default 26)
     senkou_period : Senkou B period  (default 52)
     """
+    _ind_name   = "ICH"
+    _key_params = ("tenkan_period", "kijun_period", "senkou_period")
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -117,14 +119,15 @@ class Ichimoku(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return Overlay.ichimoku()
+        return Overlay.ichimoku(key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
+        p = self.indicator_key()
         return {
-            "ichi_tenkan":   [Point(time=timestamp, value=value.tenkan)],
-            "ichi_kijun":    [Point(time=timestamp, value=value.kijun)],
-            "ichi_senkou_a": [Point(time=timestamp, value=value.senkou_a)],
-            "ichi_senkou_b": [Point(time=timestamp, value=value.senkou_b)],
-            "ichi_chikou":   [Point(time=timestamp, value=value.chikou)],
+            f"{p}_tenkan":   [Point(time=timestamp, value=value.tenkan)],
+            f"{p}_kijun":    [Point(time=timestamp, value=value.kijun)],
+            f"{p}_senkou_a": [Point(time=timestamp, value=value.senkou_a)],
+            f"{p}_senkou_b": [Point(time=timestamp, value=value.senkou_b)],
+            f"{p}_chikou":   [Point(time=timestamp, value=value.chikou)],
         }

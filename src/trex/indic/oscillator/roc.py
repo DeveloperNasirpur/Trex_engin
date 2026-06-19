@@ -26,6 +26,8 @@ class ROC(Indicator):
 
     Output: ``float`` (% change)   first emitted after ``period + 1`` ticks
     """
+    _ind_name   = "ROC"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -68,4 +70,4 @@ class ROC(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.roc(self.period)]
+        return [Oscillator.roc(self.period, key=self.indicator_key())]

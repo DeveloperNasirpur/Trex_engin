@@ -50,6 +50,8 @@ class MACD(Indicator):
     Output: ``MACDVal``
     Parameters: fast_period=12, slow_period=26, signal_period=9
     """
+    _ind_name   = "MACD"
+    _key_params = ("fast_period", "slow_period", "signal_period")
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -146,11 +148,11 @@ class MACD(Indicator):
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return Oscillator.macd(self.fast_period, self.slow_period, self.signal_period,
-                               key_prefix=f"macd_{self.fast_period}_{self.slow_period}")
+                               key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
-        prefix = f"macd_{self.fast_period}_{self.slow_period}"
+        prefix = self.indicator_key()
         return {
             f"{prefix}_line":   [Point(time=timestamp, value=value.macd)],
             f"{prefix}_signal": [Point(time=timestamp, value=value.signal)],

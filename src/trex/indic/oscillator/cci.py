@@ -30,6 +30,8 @@ class CCI(Indicator):
     Receives raw OHLCV bars.
     Output: ``float``  (first emitted after ``period`` ticks)
     """
+    _ind_name   = "CCI"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -81,4 +83,4 @@ class CCI(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return [Oscillator.cci(self.period)]
+        return [Oscillator.cci(self.period, key=self.indicator_key())]

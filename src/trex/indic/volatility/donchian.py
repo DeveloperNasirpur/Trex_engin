@@ -36,6 +36,8 @@ class DonchianChannel(Indicator):
     Receives raw OHLCV bars.
     Output: ``DonchianVal``  (first emitted after ``period`` ticks)
     """
+    _ind_name   = "DC"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -80,11 +82,11 @@ class DonchianChannel(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return Overlay.donchian(self.period, key_prefix=f"dc_{self.period}")
+        return Overlay.donchian(self.period, key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
-        prefix = f"dc_{self.period}"
+        prefix = self.indicator_key()
         return {
             f"{prefix}_upper":  [Point(time=timestamp, value=value.upper)],
             f"{prefix}_mid":    [Point(time=timestamp, value=value.middle)],

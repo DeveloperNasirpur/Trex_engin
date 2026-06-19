@@ -23,6 +23,8 @@ class Tr(Indicator):
 
     The first bar emits ``High − Low`` since there is no previous close.
     """
+    _ind_name   = "TR"
+    _key_params = ()
     def payload_extract(self, ohlcv: OHLCV):
         pass
 
@@ -57,6 +59,7 @@ class Tr(Indicator):
 
     def series_defs(self):
         from trex.domain.types import SeriesDef
-        return [SeriesDef(key="tr", label="True Range", pane="sub",
-                          kind="line", color="#B71C1C", pane_id="pane_tr",
+        k = self.indicator_key()
+        return [SeriesDef(key=k, label="True Range", pane="sub",
+                          kind="line", color="#B71C1C", pane_id=f"pane_{k}",
                           pane_height=80, digits=4)]

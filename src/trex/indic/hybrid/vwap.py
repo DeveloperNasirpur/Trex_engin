@@ -34,6 +34,8 @@ class VWAP(Indicator):
 
     Resets on every new calendar day (UTC or locally-converted timestamp).
     """
+    _ind_name   = "VWAP"
+    _key_params = ()
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -93,4 +95,4 @@ class VWAP(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.vwap()]
+        return [Overlay.vwap(key=self.indicator_key())]

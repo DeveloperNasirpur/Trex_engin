@@ -48,6 +48,8 @@ class ADX(Indicator):
     Receives raw OHLCV bars.
     Output: ``ADXVal``  (first emitted after ``2 × period`` ticks)
     """
+    _ind_name   = "ADX"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -146,12 +148,13 @@ class ADX(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
-        return Oscillator.adx(self.period)
+        return Oscillator.adx(self.period, key_prefix=self.indicator_key())
 
     def _make_points(self, value, timestamp):
         from trex.domain.types import Point
+        prefix = self.indicator_key()
         return {
-            "adx":       [Point(time=timestamp, value=value.adx)],
-            "adx_plus":  [Point(time=timestamp, value=value.plus_di)],
-            "adx_minus": [Point(time=timestamp, value=value.minus_di)],
+            f"{prefix}":        [Point(time=timestamp, value=value.adx)],
+            f"{prefix}_plus":   [Point(time=timestamp, value=value.plus_di)],
+            f"{prefix}_minus":  [Point(time=timestamp, value=value.minus_di)],
         }

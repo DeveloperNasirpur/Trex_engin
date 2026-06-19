@@ -24,6 +24,8 @@ class OBV(Indicator):
     Receives raw OHLCV bars.
     Output: ``float``  (first emitted after 2 ticks)
     """
+    _ind_name   = "OBV"
+    _key_params = ()
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -59,4 +61,4 @@ class OBV(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Volume
-        return [Volume.obv()]
+        return [Volume.obv(key=self.indicator_key())]

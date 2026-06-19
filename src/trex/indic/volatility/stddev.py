@@ -27,6 +27,8 @@ class StdDev(Indicator):
 
     Output: ``float``  (first emitted after ``period`` ticks)
     """
+    _ind_name   = "STDDEV"
+    _key_params = ("period",)
     def payload_extract(self, ohlcv: OHLCV):
         pass
 
@@ -76,4 +78,4 @@ class StdDev(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Volatility
-        return [Volatility.std_dev(self.period)]
+        return [Volatility.std_dev(self.period, key=self.indicator_key())]
