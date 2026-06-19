@@ -622,6 +622,106 @@ def cmo(
                      period=period, value_extractor=value_extractor, **kw)
 
 
+# ── Extended momentum indicators ─────────────────────────────────────────────
+
+def ao(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.ao import AO
+    return _register(AO, symbol, timeframe, listener, _ctx, visible=visible)
+
+def ac(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.ac import AC
+    return _register(AC, symbol, timeframe, listener, _ctx, visible=visible)
+
+def tsi(symbol: str, timeframe: str, r_period: int = 25, s_period: int = 13,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.tsi import TSI
+    return _register(TSI, symbol, timeframe, listener, _ctx,
+                     r_period=r_period, s_period=s_period, value_extractor=value_extractor, visible=visible)
+
+def dpo(symbol: str, timeframe: str, period: int = 20,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.dpo import DPO
+    return _register(DPO, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def kst(symbol: str, timeframe: str, r1=10, r2=13, r3=14, r4=15, s1=10, s2=13, s3=14, s4=15, signal=9,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.kst import KST
+    return _register(KST, symbol, timeframe, listener, _ctx,
+                     r1=r1, r2=r2, r3=r3, r4=r4, s1=s1, s2=s2, s3=s3, s4=s4, signal=signal,
+                     value_extractor=value_extractor, visible=visible)
+
+def coppock(symbol: str, timeframe: str, r1: int = 14, r2: int = 11, wma_period: int = 10,
+            value_extractor=ValueExtractor.extract_close,
+            listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.coppock import Coppock
+    return _register(Coppock, symbol, timeframe, listener, _ctx,
+                     r1=r1, r2=r2, wma_period=wma_period, value_extractor=value_extractor, visible=visible)
+
+def rvi(symbol: str, timeframe: str, period: int = 10,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.rvi_momentum import RVI
+    return _register(RVI, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+def fisher(symbol: str, timeframe: str, period: int = 9,
+           listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.fisher import FisherTransform
+    return _register(FisherTransform, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+def vortex(symbol: str, timeframe: str, period: int = 14,
+           listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.momentum.vortex import Vortex
+    return _register(Vortex, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+
+# ── Extended oscillator indicators ────────────────────────────────────────────
+
+def ppo(symbol: str, timeframe: str, fast_period: int = 12, slow_period: int = 26, signal_period: int = 9,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.oscillator.ppo import PPO
+    return _register(PPO, symbol, timeframe, listener, _ctx,
+                     fast_period=fast_period, slow_period=slow_period, signal_period=signal_period,
+                     value_extractor=value_extractor, visible=visible)
+
+def apo(symbol: str, timeframe: str, fast_period: int = 12, slow_period: int = 26,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.oscillator.apo import APO
+    return _register(APO, symbol, timeframe, listener, _ctx,
+                     fast_period=fast_period, slow_period=slow_period,
+                     value_extractor=value_extractor, visible=visible)
+
+def stochrsi(symbol: str, timeframe: str, rsi_period: int = 14, stoch_period: int = 14,
+             k_period: int = 3, d_period: int = 3,
+             value_extractor=ValueExtractor.extract_close,
+             listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.oscillator.stochrsi import StochRSI
+    return _register(StochRSI, symbol, timeframe, listener, _ctx,
+                     rsi_period=rsi_period, stoch_period=stoch_period,
+                     k_period=k_period, d_period=d_period,
+                     value_extractor=value_extractor, visible=visible)
+
+def uo(symbol: str, timeframe: str, period1: int = 7, period2: int = 14, period3: int = 28,
+       listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.oscillator.uo import UO
+    return _register(UO, symbol, timeframe, listener, _ctx,
+                     period1=period1, period2=period2, period3=period3, visible=visible)
+
+def chop(symbol: str, timeframe: str, period: int = 14,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.oscillator.chop import CHOP
+    return _register(CHOP, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+def force_index(symbol: str, timeframe: str, period: int = 13,
+                listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.oscillator.force_index import ForceIndex
+    return _register(ForceIndex, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+
 # ── Hybrid / compound ─────────────────────────────────────────────────────────
 
 def vwap(
@@ -794,6 +894,10 @@ api = type("api", (), {
         "rsi": rsi, "macd": macd, "trix": trix, "adx": adx, "aroon": aroon,
         "stochastic": stochastic, "cci": cci, "williams_r": williams_r,
         "roc": roc, "momentum": momentum, "mfi": mfi, "obv": obv, "cmo": cmo,
+        "ao": ao, "ac": ac, "tsi": tsi, "dpo": dpo, "kst": kst, "coppock": coppock,
+        "rvi": rvi, "fisher": fisher, "vortex": vortex,
+        "ppo": ppo, "apo": apo, "stochrsi": stochrsi, "uo": uo, "chop": chop,
+        "force_index": force_index,
         "vwap": vwap, "supertrend": supertrend, "ichimoku": ichimoku,
         "psar": psar, "zigzag_base": zigzag_base,
         "de_attach_by_key": de_attach_by_key,
