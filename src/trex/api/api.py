@@ -264,6 +264,105 @@ def kama(
                      value_extractor=value_extractor, **kw)
 
 
+def rma(symbol: str, timeframe: str, period: int = 14,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.rma import RMA
+    return _register(RMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def t3(symbol: str, timeframe: str, period: int = 5, volume_factor: float = 0.7,
+       value_extractor=ValueExtractor.extract_close,
+       listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.t3 import T3
+    return _register(T3, symbol, timeframe, listener, _ctx,
+                     period=period, volume_factor=volume_factor, value_extractor=value_extractor, visible=visible)
+
+def trima(symbol: str, timeframe: str, period: int = 20,
+          value_extractor=ValueExtractor.extract_close,
+          listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.trima import TRIMA
+    return _register(TRIMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def vidya(symbol: str, timeframe: str, cmo_period: int = 9, smooth: int = 12,
+          value_extractor=ValueExtractor.extract_close,
+          listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.vidya import VIDYA
+    return _register(VIDYA, symbol, timeframe, listener, _ctx,
+                     cmo_period=cmo_period, smooth=smooth, value_extractor=value_extractor, visible=visible)
+
+def alma(symbol: str, timeframe: str, period: int = 20, sigma: float = 6.0, offset_pct: float = 0.85,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.alma import ALMA
+    return _register(ALMA, symbol, timeframe, listener, _ctx,
+                     period=period, sigma=sigma, offset_pct=offset_pct, value_extractor=value_extractor, visible=visible)
+
+def mcginley(symbol: str, timeframe: str, period: int = 14,
+             value_extractor=ValueExtractor.extract_close,
+             listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.mcginley import McGinley
+    return _register(McGinley, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def lsma(symbol: str, timeframe: str, period: int = 25,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.lsma import LSMA
+    return _register(LSMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def fwma(symbol: str, timeframe: str, period: int = 10,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.fwma import FWMA
+    return _register(FWMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def pwma(symbol: str, timeframe: str, period: int = 10,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.pwma import PWMA
+    return _register(PWMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def swma(symbol: str, timeframe: str, period: int = 4,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.swma import SWMA
+    return _register(SWMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def sinwma(symbol: str, timeframe: str, period: int = 14,
+           value_extractor=ValueExtractor.extract_close,
+           listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.sinwma import SINWMA
+    return _register(SINWMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def ssma(symbol: str, timeframe: str, period: int = 20,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.ssma import SSMA
+    return _register(SSMA, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=value_extractor, visible=visible)
+
+def hwma(symbol: str, timeframe: str, alpha: float = 0.2, beta: float = 0.1,
+         value_extractor=ValueExtractor.extract_close,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.hwma import HWMA
+    return _register(HWMA, symbol, timeframe, listener, _ctx,
+                     alpha=alpha, beta=beta, value_extractor=value_extractor, visible=visible)
+
+def jma(symbol: str, timeframe: str, period: int = 7, phase: int = 0, power: int = 2,
+        value_extractor=ValueExtractor.extract_close,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.trend.jma import JMA
+    return _register(JMA, symbol, timeframe, listener, _ctx,
+                     period=period, phase=phase, power=power, value_extractor=value_extractor, visible=visible)
+
+
 # ── Volatility indicators ─────────────────────────────────────────────────────
 
 def tr(
@@ -687,6 +786,9 @@ api = type("api", (), {
     for name, fn in {
         "sma": sma, "ema": ema, "wma": wma, "hma": hma,
         "dema": dema, "tema": tema, "zlema": zlema, "vwma": vwma, "kama": kama,
+        "rma": rma, "t3": t3, "trima": trima, "vidya": vidya, "alma": alma,
+        "mcginley": mcginley, "lsma": lsma, "fwma": fwma, "pwma": pwma,
+        "swma": swma, "sinwma": sinwma, "ssma": ssma, "hwma": hwma, "jma": jma,
         "tr": tr, "atr": atr, "stddev": stddev, "bbands": bbands,
         "keltner": keltner, "donchian": donchian,
         "rsi": rsi, "macd": macd, "trix": trix, "adx": adx, "aroon": aroon,
