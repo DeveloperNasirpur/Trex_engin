@@ -20,6 +20,8 @@ class DEMA(Indicator):
 
     Output: ``float`` (first emitted after ``2 × period`` ticks)
     """
+    _ind_name   = "DEMA"
+    _key_params = ("period",)
 
     def __init__(
         self,
@@ -72,4 +74,4 @@ class DEMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.dema(self.period)]
+        return [Overlay.dema(self.period, key=self.indicator_key())]

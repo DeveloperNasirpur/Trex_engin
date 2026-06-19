@@ -198,17 +198,21 @@ class Overlay:
     # ── Advanced overlays ────────────────────────────────────────────
 
     @staticmethod
-    def vwap(*, color: str = "#FCD535") -> SeriesDef:
+    def vwap(*, color: str = "#FCD535", key: Optional[str] = None) -> SeriesDef:
         """Volume-Weighted Average Price."""
-        return _overlay("vwap", "VWAP", color, width=2)
+        k = key or "vwap"
+        return _overlay(k, "VWAP", color, width=2)
 
     @staticmethod
-    def vwma(period: int = 20, *, color: str = "#FF5722") -> SeriesDef:
+    def vwma(period: int = 20, *, color: str = "#FF5722",
+             key: Optional[str] = None) -> SeriesDef:
         """Volume-Weighted Moving Average."""
-        return _overlay(f"vwma{period}", f"VWMA {period}", color)
+        k = key or f"vwma{period}"
+        return _overlay(k, f"VWMA {period}", color)
 
     @staticmethod
-    def supertrend(period: int = 10, mult: float = 3.0) -> SeriesDef:
+    def supertrend(period: int = 10, mult: float = 3.0,
+                   key: Optional[str] = None) -> SeriesDef:
         """
         SuperTrend.
 
@@ -216,15 +220,17 @@ class Overlay:
         - ``"#089981"`` when bullish
         - ``"#F23645"`` when bearish
         """
-        return _overlay(f"st_{period}_{mult}",
-                        f"SuperTrend ({period},{mult})", "#089981")
+        k = key or f"st_{period}_{mult}"
+        return _overlay(k, f"SuperTrend ({period},{mult})", "#089981")
 
     @staticmethod
-    def psar(step: float = 0.02, max_step: float = 0.2) -> SeriesDef:
+    def psar(step: float = 0.02, max_step: float = 0.2,
+             key: Optional[str] = None) -> SeriesDef:
         """Parabolic SAR (scatter plot)."""
-        return SeriesDef(key="psar", label=f"PSAR ({step},{max_step})",
+        k = key or "psar"
+        return SeriesDef(key=k, label=f"PSAR ({step},{max_step})",
                          pane="main", kind="scatter", color="#FF9800",
-                         pane_id="psar")
+                         pane_id=k)
 
     @staticmethod
     def ichimoku(key_prefix: str = "ichi") -> list[SeriesDef]:
@@ -271,10 +277,12 @@ class Oscillator:
     """SeriesDef factories for sub-pane oscillators."""
 
     @staticmethod
-    def rsi(period: int = 14, *, color: str = "#AB47BC") -> SeriesDef:
+    def rsi(period: int = 14, *, color: str = "#AB47BC",
+            key: Optional[str] = None) -> SeriesDef:
         """Relative Strength Index."""
-        return _sub(f"rsi{period}", f"RSI ({period})", color,
-                    pane_id=f"pane_rsi{period}",
+        k = key or f"rsi{period}"
+        return _sub(k, f"RSI ({period})", color,
+                    pane_id=f"pane_{k}",
                     levels=_rsi_levels(), height=100)
 
     @staticmethod
@@ -310,24 +318,30 @@ class Oscillator:
         ]
 
     @staticmethod
-    def cci(period: int = 20, *, color: str = "#9C27B0") -> SeriesDef:
+    def cci(period: int = 20, *, color: str = "#9C27B0",
+            key: Optional[str] = None) -> SeriesDef:
         """Commodity Channel Index."""
         lvls = [Level(100, "#EF5350", 2, "OB"), Level(-100, "#26A69A", 2, "OS")]
-        return _sub(f"cci{period}", f"CCI ({period})", color,
-                    pane_id=f"pane_cci{period}", levels=lvls)
+        k = key or f"cci{period}"
+        return _sub(k, f"CCI ({period})", color,
+                    pane_id=f"pane_{k}", levels=lvls)
 
     @staticmethod
-    def williams_r(period: int = 14, *, color: str = "#00BCD4") -> SeriesDef:
+    def williams_r(period: int = 14, *, color: str = "#00BCD4",
+                   key: Optional[str] = None) -> SeriesDef:
         """Williams %R."""
         lvls = [Level(-20, "#EF5350", 2, "OB"), Level(-80, "#26A69A", 2, "OS")]
-        return _sub(f"willr{period}", f"Williams %R ({period})", color,
-                    pane_id=f"pane_willr{period}", digits=1, levels=lvls)
+        k = key or f"willr{period}"
+        return _sub(k, f"Williams %R ({period})", color,
+                    pane_id=f"pane_{k}", digits=1, levels=lvls)
 
     @staticmethod
-    def atr(period: int = 14, *, color: str = "#B71C1C") -> SeriesDef:
+    def atr(period: int = 14, *, color: str = "#B71C1C",
+            key: Optional[str] = None) -> SeriesDef:
         """Average True Range."""
-        return _sub(f"atr{period}", f"ATR ({period})", color,
-                    pane_id=f"pane_atr{period}", digits=4, height=80)
+        k = key or f"atr{period}"
+        return _sub(k, f"ATR ({period})", color,
+                    pane_id=f"pane_{k}", digits=4, height=80)
 
     @staticmethod
     def adx(period: int = 14, key_prefix: str = "adx") -> list[SeriesDef]:
@@ -350,22 +364,28 @@ class Oscillator:
         ]
 
     @staticmethod
-    def momentum(period: int = 10, *, color: str = "#FF5722") -> SeriesDef:
+    def momentum(period: int = 10, *, color: str = "#FF5722",
+                 key: Optional[str] = None) -> SeriesDef:
         """Momentum."""
-        return _sub(f"mom{period}", f"Momentum ({period})", color,
-                    pane_id=f"pane_mom{period}", digits=4, height=80)
+        k = key or f"mom{period}"
+        return _sub(k, f"Momentum ({period})", color,
+                    pane_id=f"pane_{k}", digits=4, height=80)
 
     @staticmethod
-    def roc(period: int = 12, *, color: str = "#00BCD4") -> SeriesDef:
+    def roc(period: int = 12, *, color: str = "#00BCD4",
+            key: Optional[str] = None) -> SeriesDef:
         """Rate of Change (%)."""
-        return _sub(f"roc{period}", f"ROC ({period})%", color,
-                    pane_id=f"pane_roc{period}")
+        k = key or f"roc{period}"
+        return _sub(k, f"ROC ({period})%", color,
+                    pane_id=f"pane_{k}")
 
     @staticmethod
-    def trix(period: int = 15, *, color: str = "#E91E63") -> SeriesDef:
+    def trix(period: int = 15, *, color: str = "#E91E63",
+             key: Optional[str] = None) -> SeriesDef:
         """TRIX — triple-smoothed EMA ROC."""
-        return _sub(f"trix{period}", f"TRIX ({period})", color,
-                    pane_id=f"pane_trix{period}")
+        k = key or f"trix{period}"
+        return _sub(k, f"TRIX ({period})", color,
+                    pane_id=f"pane_{k}")
 
     @staticmethod
     def dpo(period: int = 20, *, color: str = "#607D8B") -> SeriesDef:
@@ -374,11 +394,13 @@ class Oscillator:
                     pane_id=f"pane_dpo{period}")
 
     @staticmethod
-    def cmo(period: int = 14, *, color: str = "#795548") -> SeriesDef:
+    def cmo(period: int = 14, *, color: str = "#795548",
+            key: Optional[str] = None) -> SeriesDef:
         """Chande Momentum Oscillator."""
         lvls = [Level(50, "#EF5350", 2, "OB"), Level(-50, "#26A69A", 2, "OS")]
-        return _sub(f"cmo{period}", f"CMO ({period})", color,
-                    pane_id=f"pane_cmo{period}", levels=lvls)
+        k = key or f"cmo{period}"
+        return _sub(k, f"CMO ({period})", color,
+                    pane_id=f"pane_{k}", levels=lvls)
 
     @staticmethod
     def ppo(fast: int = 12, slow: int = 26, signal: int = 9,
@@ -513,16 +535,19 @@ class Volume:
         )
 
     @staticmethod
-    def obv(*, color: str = "#2196F3") -> SeriesDef:
+    def obv(*, color: str = "#2196F3", key: Optional[str] = None) -> SeriesDef:
         """On-Balance Volume."""
-        return _sub("obv", "OBV", color, pane_id="pane_obv", digits=0)
+        k = key or "obv"
+        return _sub(k, "OBV", color, pane_id=f"pane_{k}", digits=0)
 
     @staticmethod
-    def mfi(period: int = 14, *, color: str = "#4CAF50") -> SeriesDef:
+    def mfi(period: int = 14, *, color: str = "#4CAF50",
+            key: Optional[str] = None) -> SeriesDef:
         """Money Flow Index."""
         lvls = [Level(80, "#EF5350", 2, "OB"), Level(20, "#26A69A", 2, "OS")]
-        return _sub(f"mfi{period}", f"MFI ({period})", color,
-                    pane_id=f"pane_mfi{period}", levels=lvls)
+        k = key or f"mfi{period}"
+        return _sub(k, f"MFI ({period})", color,
+                    pane_id=f"pane_{k}", levels=lvls)
 
     @staticmethod
     def cmf(period: int = 20, *, color: str = "#00BCD4") -> SeriesDef:
@@ -614,10 +639,12 @@ class Volatility:
                     pane_id=f"pane_hv{period}", digits=2)
 
     @staticmethod
-    def std_dev(period: int = 20, *, color: str = "#9C27B0") -> SeriesDef:
+    def std_dev(period: int = 20, *, color: str = "#9C27B0",
+                key: Optional[str] = None) -> SeriesDef:
         """Rolling Standard Deviation."""
-        return _sub(f"std{period}", f"StdDev {period}", color,
-                    pane_id=f"pane_std{period}", digits=4)
+        k = key or f"std{period}"
+        return _sub(k, f"StdDev {period}", color,
+                    pane_id=f"pane_{k}", digits=4)
 
     @staticmethod
     def chaikin_volatility(key: str = "cv") -> SeriesDef:

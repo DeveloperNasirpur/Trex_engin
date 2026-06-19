@@ -27,6 +27,8 @@ class EMA(Indicator):
     First ``period`` values are averaged (SMA) to seed the running EMA —
     identical to TradingView's behavior.
     """
+    _ind_name   = "EMA"
+    _key_params = ("period",)
     def payload_extract(self, ohlcv: OHLCV):
         pass
 
@@ -70,4 +72,4 @@ class EMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.ema(self.period)]
+        return [Overlay.ema(self.period, key=self.indicator_key())]

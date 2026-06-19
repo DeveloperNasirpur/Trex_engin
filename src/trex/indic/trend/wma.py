@@ -31,6 +31,8 @@ class WMA(Indicator):
 
     Output: ``float``  (first emitted after ``period`` ticks)
     """
+    _ind_name   = "WMA"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -84,4 +86,4 @@ class WMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.wma(self.period)]
+        return [Overlay.wma(self.period, key=self.indicator_key())]

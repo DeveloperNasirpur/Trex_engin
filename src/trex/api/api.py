@@ -25,6 +25,50 @@ from trex.engine.context import IndicatorInfo, ctx as _global_ctx, ctx
 from trex.engine.indicator import Indicator
 
 
+_EXTRACTOR_SHORT: dict[str, str | None] = {
+    "extract_close":  None,    # default, omit
+    "extract_open":   "open",
+    "extract_high":   "high",
+    "extract_low":    "low",
+    "extract_volume": "vol",
+    "extract_hl2":    "hl2",
+    "extract_hlc3":   "hlc3",
+    "extract_hlcc4":  "hlcc4",
+}
+
+
+def _make_indicator_key(cnl: type, symbol: str, tf: str, params: dict) -> str:
+    """Build human-readable key from indicator class and params."""
+    name = getattr(cnl, "_ind_name", None) or cnl.__name__
+    parts: list[str] = [name, symbol.upper(), tf]
+
+    key_params: tuple[str, ...] = getattr(cnl, "_key_params", ())
+    if key_params:
+        for attr in key_params:
+            if attr in params:
+                v = params[attr]
+                if v is not None and not callable(v):
+                    parts.append(str(v))
+    else:
+        # fallback: sorted non-callable, non-extractor params
+        for k in sorted(params):
+            if k == "value_extractor":
+                continue
+            v = params[k]
+            if v is not None and not callable(v):
+                parts.append(str(v))
+
+    # extractor suffix (only if non-default)
+    ve = params.get("value_extractor")
+    if ve is not None and callable(ve):
+        fname = getattr(ve, "__name__", "")
+        short = _EXTRACTOR_SHORT.get(fname, fname or None)
+        if short:
+            parts.append(short)
+
+    return "_".join(str(p) for p in parts)
+
+
 # ── Indicator tree renderer ───────────────────────────────────────────────────
 
 def render_indicator_tree(infos: dict[str, IndicatorInfo]) -> str:
@@ -74,6 +118,10 @@ def _register(
     inst._is_primary = True
     if visible:
         inst._visible = True  # type: ignore[attr-defined]
+
+    # Inject human-readable key (idempotent — only set on first registration)
+    if not inst._indicator_id:
+        inst._indicator_id = _make_indicator_key(cnl, symbol, timeframe, params)
 
     # Wire into AutoEngine if it is running
     from trex.engine import auto as _auto_mod

@@ -29,6 +29,8 @@ class SMA(Indicator):
 
     Output: ``float``  (first emitted after ``period`` ticks)
     """
+    _ind_name   = "SMA"
+    _key_params = ("period",)
 
     def payload_extract(self, ohlcv: OHLCV):
         pass
@@ -73,4 +75,4 @@ class SMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.sma(self.period)]
+        return [Overlay.sma(self.period, key=self.indicator_key())]

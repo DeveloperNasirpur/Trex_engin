@@ -61,6 +61,17 @@ class Indicator(SeriesMixin, PipelineHost, ABC):
         max_output: Output ring-buffer capacity.
     """
 
+    # Class-level — each subclass sets these
+    _ind_name:   str             = ""   # short display name; defaults to cls.__name__
+    _key_params: tuple[str, ...] = ()   # ordered param attrs to include in key
+
+    # Instance-level — injected by _register() in api.py after creation
+    _indicator_id: str = ""             # human-readable key set externally
+
+    def indicator_key(self) -> str:
+        """Human-readable identifier used for DB field name, chart ID, and context key."""
+        return self._indicator_id or self.context_key
+
     def __init__(
         self,
         *,

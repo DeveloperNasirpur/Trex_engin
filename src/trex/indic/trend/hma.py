@@ -19,6 +19,8 @@ class HMA(Indicator):
 
     Output: ``float`` (first emitted after enough bars to seed all three WMAs)
     """
+    _ind_name   = "HMA"
+    _key_params = ("period",)
 
     def __init__(
         self,
@@ -69,4 +71,4 @@ class HMA(Indicator):
 
     def series_defs(self):
         from trex.presentation.indicators import Overlay
-        return [Overlay.hma(self.period)]
+        return [Overlay.hma(self.period, key=self.indicator_key())]
