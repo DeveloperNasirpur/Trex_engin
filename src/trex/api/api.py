@@ -21,7 +21,7 @@ from typing import Any, Callable, Type
 from trex.base.indic_key import ListenerKey
 from trex.base.ohlcv import ValueExtractor
 from trex.base.timeframe import Timeframe
-from trex.engine.context import IndicatorInfo, ctx as _global_ctx
+from trex.engine.context import IndicatorInfo, ctx as _global_ctx, ctx
 from trex.engine.indicator import Indicator
 
 
