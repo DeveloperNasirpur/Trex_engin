@@ -64,10 +64,22 @@ def _register(
     **params:  Any,
 ) -> ListenerKey:
     """Register indicator in *_ctx* (or global ctx if None) and attach *listener*."""
+    # Extract meta-flags — must not be passed to the indicator constructor
+    visible: bool = bool(params.pop("visible", False))
+
     context = _ctx if _ctx is not None else _global_ctx
     inst = context.get(cnl=cnl, symbol=symbol, timeframe=timeframe, **params)
+
     # Mark as primary: این indicator توسط کاربر (نه sub-indicator) register شده
     inst._is_primary = True
+    if visible:
+        inst._visible = True  # type: ignore[attr-defined]
+
+    # Wire into AutoEngine if it is running
+    from trex.engine import auto as _auto_mod
+    if _auto_mod._engine is not None:
+        _auto_mod._engine.wire_indicator(symbol, inst)
+
     key = ""
     if listener is not None:
         key = context.make_listener_key(inst, listener)
@@ -83,11 +95,12 @@ def sma(
     period:          int                    = 20,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Simple Moving Average."""
     from trex.indic.trend.sma import SMA
     return _register(SMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def ema(
@@ -96,11 +109,12 @@ def ema(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Exponential Moving Average."""
     from trex.indic.trend.ema import EMA
     return _register(EMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def wma(
@@ -109,11 +123,12 @@ def wma(
     period:          int                    = 20,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Weighted Moving Average."""
     from trex.indic.trend.wma import WMA
     return _register(WMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def hma(
@@ -122,11 +137,12 @@ def hma(
     period:          int                    = 10,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Hull Moving Average."""
     from trex.indic.trend.hma import HMA
     return _register(HMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def dema(
@@ -135,11 +151,12 @@ def dema(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Double Exponential Moving Average."""
     from trex.indic.trend.dema import DEMA
     return _register(DEMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def tema(
@@ -148,11 +165,12 @@ def tema(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Triple Exponential Moving Average."""
     from trex.indic.trend.tema import TEMA
     return _register(TEMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def zlema(
@@ -161,11 +179,12 @@ def zlema(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Zero-Lag EMA."""
     from trex.indic.trend.zlema import ZLEMA
     return _register(ZLEMA, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def vwma(
@@ -173,10 +192,11 @@ def vwma(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 20,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Volume-Weighted Moving Average (uses OHLCV)."""
     from trex.indic.trend.vwma import VWMA
-    return _register(VWMA, symbol, timeframe, listener, period=period)
+    return _register(VWMA, symbol, timeframe, listener, period=period, **kw)
 
 
 def kama(
@@ -187,12 +207,13 @@ def kama(
     slow:            int                    = 30,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Kaufman Adaptive Moving Average."""
     from trex.indic.trend.kama import KAMA
     return _register(KAMA, symbol, timeframe, listener,
                      er_period=er_period, fast=fast, slow=slow,
-                     value_extractor=value_extractor)
+                     value_extractor=value_extractor, **kw)
 
 
 # ── Volatility indicators ─────────────────────────────────────────────────────
@@ -201,10 +222,11 @@ def tr(
     symbol:    str,
     timeframe: str                    = Timeframe.m1,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """True Range."""
     from trex.indic.volatility.tr import Tr
-    return _register(Tr, symbol, timeframe, listener)
+    return _register(Tr, symbol, timeframe, listener, **kw)
 
 
 def atr(
@@ -213,11 +235,12 @@ def atr(
     period:          int                    = 14,
     value_extractor: Callable[..., Any] | None = None,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Average True Range."""
     from trex.indic.volatility.atr import Atr
     return _register(Atr, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def stddev(
@@ -226,11 +249,12 @@ def stddev(
     period:          int                    = 20,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Rolling Standard Deviation."""
     from trex.indic.volatility.stddev import StdDev
     return _register(StdDev, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def bbands(
@@ -240,11 +264,12 @@ def bbands(
     mult:            float                  = 2.0,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Bollinger Bands → BBVal(upper, middle, lower)."""
     from trex.indic.volatility.bbands import BollingerBands
     return _register(BollingerBands, symbol, timeframe, listener,
-                     period=period, mult=mult, value_extractor=value_extractor)
+                     period=period, mult=mult, value_extractor=value_extractor, **kw)
 
 
 def keltner(
@@ -254,11 +279,12 @@ def keltner(
     atr_period: int                    = 10,
     mult:       float                  = 2.0,
     listener:   Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Keltner Channel → KeltnerVal(upper, middle, lower)."""
     from trex.indic.volatility.keltner import KeltnerChannel
     return _register(KeltnerChannel, symbol, timeframe, listener,
-                     period=period, atr_period=atr_period, mult=mult)
+                     period=period, atr_period=atr_period, mult=mult, **kw)
 
 
 def donchian(
@@ -266,10 +292,11 @@ def donchian(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 20,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Donchian Channel → DonchianVal(upper, middle, lower)."""
     from trex.indic.volatility.donchian import DonchianChannel
-    return _register(DonchianChannel, symbol, timeframe, listener, period=period)
+    return _register(DonchianChannel, symbol, timeframe, listener, period=period, **kw)
 
 
 # ── Momentum / RSI-family ─────────────────────────────────────────────────────
@@ -280,11 +307,12 @@ def rsi(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """RSI (Wilder EMA)."""
     from trex.indic.momentum.rsi import RSI
     return _register(RSI, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def macd(
@@ -295,12 +323,13 @@ def macd(
     signal_period:   int                    = 9,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """MACD → MACDVal(macd, signal, histogram)."""
     from trex.indic.momentum.macd import MACD
     return _register(MACD, symbol, timeframe, listener,
                      fast_period=fast_period, slow_period=slow_period,
-                     signal_period=signal_period, value_extractor=value_extractor)
+                     signal_period=signal_period, value_extractor=value_extractor, **kw)
 
 
 def trix(
@@ -309,11 +338,12 @@ def trix(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """TRIX Oscillator."""
     from trex.indic.momentum.trix import TRIX
     return _register(TRIX, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def adx(
@@ -321,10 +351,11 @@ def adx(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 14,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """ADX → ADXVal(adx, plus_di, minus_di)."""
     from trex.indic.momentum.adx import ADX
-    return _register(ADX, symbol, timeframe, listener, period=period)
+    return _register(ADX, symbol, timeframe, listener, period=period, **kw)
 
 
 def aroon(
@@ -332,10 +363,11 @@ def aroon(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 25,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Aroon → AroonVal(up, down, oscillator)."""
     from trex.indic.momentum.aroon import Aroon
-    return _register(Aroon, symbol, timeframe, listener, period=period)
+    return _register(Aroon, symbol, timeframe, listener, period=period, **kw)
 
 
 # ── Oscillators ───────────────────────────────────────────────────────────────
@@ -346,11 +378,12 @@ def stochastic(
     k_period:  int                    = 14,
     d_period:  int                    = 3,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Stochastic → StochVal(k, d)."""
     from trex.indic.oscillator.stochastic import Stochastic
     return _register(Stochastic, symbol, timeframe, listener,
-                     k_period=k_period, d_period=d_period)
+                     k_period=k_period, d_period=d_period, **kw)
 
 
 def cci(
@@ -358,10 +391,11 @@ def cci(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 20,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Commodity Channel Index."""
     from trex.indic.oscillator.cci import CCI
-    return _register(CCI, symbol, timeframe, listener, period=period)
+    return _register(CCI, symbol, timeframe, listener, period=period, **kw)
 
 
 def williams_r(
@@ -369,10 +403,11 @@ def williams_r(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 14,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Williams %R."""
     from trex.indic.oscillator.williams_r import WilliamsR
-    return _register(WilliamsR, symbol, timeframe, listener, period=period)
+    return _register(WilliamsR, symbol, timeframe, listener, period=period, **kw)
 
 
 def roc(
@@ -381,11 +416,12 @@ def roc(
     period:          int                    = 12,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Rate of Change."""
     from trex.indic.oscillator.roc import ROC
     return _register(ROC, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def momentum(
@@ -394,11 +430,12 @@ def momentum(
     period:          int                    = 10,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Momentum Oscillator."""
     from trex.indic.oscillator.mom import Momentum
     return _register(Momentum, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 def mfi(
@@ -406,20 +443,22 @@ def mfi(
     timeframe: str                    = Timeframe.m1,
     period:    int                    = 14,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Money Flow Index."""
     from trex.indic.oscillator.mfi import MFI
-    return _register(MFI, symbol, timeframe, listener, period=period)
+    return _register(MFI, symbol, timeframe, listener, period=period, **kw)
 
 
 def obv(
     symbol:    str,
     timeframe: str                    = Timeframe.m1,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """On Balance Volume."""
     from trex.indic.oscillator.obv import OBV
-    return _register(OBV, symbol, timeframe, listener)
+    return _register(OBV, symbol, timeframe, listener, **kw)
 
 
 def cmo(
@@ -428,11 +467,12 @@ def cmo(
     period:          int                    = 14,
     value_extractor: Callable[..., Any]     = ValueExtractor.extract_close,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Chande Momentum Oscillator."""
     from trex.indic.oscillator.cmo import CMO
     return _register(CMO, symbol, timeframe, listener,
-                     period=period, value_extractor=value_extractor)
+                     period=period, value_extractor=value_extractor, **kw)
 
 
 # ── Hybrid / compound ─────────────────────────────────────────────────────────
@@ -441,10 +481,11 @@ def vwap(
     symbol:    str,
     timeframe: str                    = Timeframe.m1,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """VWAP — resets each trading day."""
     from trex.indic.hybrid.vwap import VWAP
-    return _register(VWAP, symbol, timeframe, listener)
+    return _register(VWAP, symbol, timeframe, listener, **kw)
 
 
 def supertrend(
@@ -453,11 +494,12 @@ def supertrend(
     period:     int                    = 10,
     multiplier: float                  = 3.0,
     listener:   Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Supertrend → SupertrendVal(value, is_uptrend)."""
     from trex.indic.hybrid.supertrend import Supertrend
     return _register(Supertrend, symbol, timeframe, listener,
-                     period=period, multiplier=multiplier)
+                     period=period, multiplier=multiplier, **kw)
 
 
 def ichimoku(
@@ -467,12 +509,13 @@ def ichimoku(
     kijun_period:  int                    = 26,
     senkou_period: int                    = 52,
     listener:      Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Ichimoku Kinko Hyo → IchimokuVal."""
     from trex.indic.hybrid.ichimoku import Ichimoku
     return _register(Ichimoku, symbol, timeframe, listener,
                      tenkan_period=tenkan_period, kijun_period=kijun_period,
-                     senkou_period=senkou_period)
+                     senkou_period=senkou_period, **kw)
 
 
 def psar(
@@ -481,11 +524,12 @@ def psar(
     step:      float                  = 0.02,
     max_af:    float                  = 0.20,
     listener:  Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Parabolic SAR → PSARVal(sar, is_uptrend, af, ep)."""
     from trex.indic.hybrid.psar import ParabolicSAR
     return _register(ParabolicSAR, symbol, timeframe, listener,
-                     step=step, max_af=max_af)
+                     step=step, max_af=max_af, **kw)
 
 
 def zigzag_base(
@@ -493,11 +537,12 @@ def zigzag_base(
     timeframe:       str                    = Timeframe.m1,
     min_accept_size: float                  = 0.0,
     listener:        Callable[[Any], None] | None = None,
+    **kw: Any,
 ) -> ListenerKey:
     """Channel-break ZigZag → ZigZagVal."""
     from trex.indic.ZIG import ZigZagBase
     return _register(ZigZagBase, symbol, timeframe, listener,
-                     min_accept_size=min_accept_size)
+                     min_accept_size=min_accept_size, **kw)
 
 
 # ── Context helpers ───────────────────────────────────────────────────────────
