@@ -26,6 +26,7 @@ def init(
     max_bars:           int           = 10_000,
     snapshot_size:      int           = 500,
     db_config:          object | None = None,
+    exchange:           str           = "default",
     fetch_size:         int           = 100_000,
     start_provide_from: str   | None  = None,
 ) -> None:
@@ -51,6 +52,9 @@ def init(
         Number of recent bars sent to each new client (default ``500``).
     db_config:
         Optional :class:`~trex.store.db_store.DbConfig` for PostgreSQL persistence.
+    exchange:
+        Exchange name used as PostgreSQL schema prefix (e.g. ``"binance"``).
+        Defaults to ``"default"``.
     fetch_size:
         PostgreSQL streaming batch size.
     start_provide_from:
@@ -93,6 +97,8 @@ def init(
         max_bars         = max_bars,
         source_timeframe = source_timeframe,
         snapshot_size    = snapshot_size,
+        db_config        = db_config,
+        exchange         = exchange,
     )
     _auto_mod._engine = engine
     engine.start()
@@ -132,20 +138,24 @@ def push(bar: "Bar", symbol: str, timeframe: str | None = None) -> None:  # type
     _engine.push(bar, symbol, timeframe)
 
 
-def seed(bars: list, symbol: str, timeframe: str | None = None) -> None:
+def seed(symbol: str, timeframe: str | None = None) -> None:
     """
-    Bulk-load historical bars into the store.
+    Auto-load historical bars from DB, calculate all registered indicators
+    (incremental), and populate the in-memory store for client snapshots.
 
-    Call once at startup before the live feed begins.  New clients that
-    connect will receive these bars as their initial snapshot.
+    Call once at startup — after ``trex.init()`` and after registering all
+    indicators — before starting the live feed.
+
+    Incremental behaviour
+    ---------------------
+    On first run: feeds all bars through every indicator, saves results to DB.
+    On subsequent runs: only calculates and saves bars added since last run.
+    Already-calculated indicator values are never rewritten.
 
     Parameters
     ----------
-    bars:
-        List of ``Bar`` objects, sorted ascending by time (or unsorted —
-        the store de-duplicates and sorts automatically).
     symbol:
-        Trading symbol.
+        Trading symbol (e.g. ``"BTCUSDT"``).
     timeframe:
         Optional override (default = ``source_timeframe`` set in ``init()``).
 
@@ -153,13 +163,20 @@ def seed(bars: list, symbol: str, timeframe: str | None = None) -> None:
     -------
     ::
 
-        historical = load_from_db("BTCUSDT", "1m", limit=5_000)
-        trex.seed(historical, symbol="BTCUSDT")
+        trex.init(timezone="Asia/Tehran", db_config=cfg, exchange="binance")
+        trex.rsi("BTCUSDT", "1m", period=14, visible=True, listener=on_rsi)
+        trex.ema("BTCUSDT", "1m", period=20, visible=True)
+
+        trex.seed("BTCUSDT")   # reads from DB, calculates, saves
+
+        while True:
+            bar = exchange.next_bar()
+            trex.push(bar, symbol="BTCUSDT")
     """
     from trex.engine.auto import _engine
     if _engine is None:
         raise RuntimeError("Call trex.init() before trex.seed()")
-    _engine.seed(bars, symbol, timeframe)
+    _engine.seed(symbol, timeframe)
 
 
 def stop() -> None:

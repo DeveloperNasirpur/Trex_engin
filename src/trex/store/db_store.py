@@ -863,6 +863,107 @@ class TrexStore(_SqlMixin):
         complete = window_count > 0 and len(records) == window_count
         return complete, records
 
+    # ── Public: reads (extended) ──────────────────────────────────────────────
+
+    def fetch_bars(
+        self,
+        exchange: str,
+        symbol: str,
+        tf: str,
+        start_ts: int | None = None,
+        end_ts: int | None = None,
+    ) -> list["Bar"]:
+        """Return all candles as :class:`~trex.domain.types.Bar` objects, ascending.
+
+        Args:
+            exchange: Exchange identifier.
+            symbol: Trading pair.
+            tf: Timeframe.
+            start_ts: Inclusive lower bound (unix seconds), or None.
+            end_ts: Inclusive upper bound (unix seconds), or None.
+
+        Returns:
+            List of ``Bar`` objects ordered oldest → newest.
+        """
+        from trex.domain.types import Bar
+
+        ex, table = self._resolve_names(exchange, symbol, tf)
+        if not self.table_exists(exchange, symbol, tf):
+            return []
+
+        where, params = self._time_clause(start_ts, end_ts)
+        sql = (
+            f'SELECT time, open, high, low, close, volume '
+            f'FROM "{ex}"."{table}" '
+            f"{where} ORDER BY time ASC"
+        )
+        bars: list[Bar] = []
+        with self._connection() as conn, conn.cursor() as cur:
+            cur.execute(sql, params)
+            for row in cur.fetchall():
+                try:
+                    bars.append(Bar(
+                        time=int(row[0]),
+                        open=float(row[1] or 0),
+                        high=float(row[2] or 0),
+                        low=float(row[3] or 0),
+                        close=float(row[4] or 0),
+                        volume=float(row[5] or 0),
+                    ))
+                except (ValueError, TypeError):
+                    _LOG.warning("fetch_bars: skipping malformed row time=%s", row[0])
+        return bars
+
+    def bulk_update_indicators(
+        self,
+        exchange: str,
+        symbol: str,
+        tf: str,
+        by_time: "dict[int, dict[str, Any]]",
+    ) -> int:
+        """Batch-merge indicator values for many bars in one transaction.
+
+        Unlike :meth:`save_indicators`, OHLCV columns are never touched —
+        only the ``indicators`` JSONB document is updated (via ``||`` merge).
+
+        Args:
+            exchange: Exchange identifier.
+            symbol: Trading pair.
+            tf: Timeframe.
+            by_time: Mapping ``{unix_ts: {series_key: value, ...}}``.
+
+        Returns:
+            Number of rows written.
+        """
+        if not by_time:
+            return 0
+        from psycopg.types.json import Jsonb
+
+        ex, table = self._resolve_names(exchange, symbol, tf)
+        sql = (
+            f'INSERT INTO "{ex}"."{table}" (time, indicators) VALUES (%s, %s) '
+            f"ON CONFLICT (time) DO UPDATE SET "
+            f'indicators = "{table}".indicators || EXCLUDED.indicators, '
+            f"updated_at = NOW()"
+        )
+        all_keys: set[str] = set()
+        params: list[tuple[Any, Any]] = []
+        for ts, ind_data in sorted(by_time.items()):
+            normalised = {k: self._normalise_indicator(v) for k, v in ind_data.items()}
+            all_keys.update(normalised.keys())
+            params.append((ts, Jsonb(normalised)))
+
+        with self._connection() as conn, conn.cursor() as cur:
+            self._ensure_schema(cur, ex)
+            self._ensure_table(cur, ex, table)
+            cur.executemany(sql, params)
+
+        self._touch_meta(ex, table, all_keys)
+        _LOG.debug(
+            "bulk_update_indicators %s.%s: %d row(s).", ex, table, len(params)
+        )
+        return len(params)
+
     # ── Public: writes ────────────────────────────────────────────────────────
 
     def save_indicators(
