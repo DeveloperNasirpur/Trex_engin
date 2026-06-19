@@ -69,6 +69,17 @@ class Momentum(Indicator):
         self._win.append(value)   # push new value → oldest drops off
         return value - self._win[0]  # win[0] is now close[n-period]
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win"] = list(self._win)
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win = deque(state["win"], maxlen=self.period + 1)
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return [Oscillator.momentum(self.period, key=self.indicator_key())]

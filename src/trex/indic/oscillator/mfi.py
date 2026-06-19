@@ -100,6 +100,25 @@ class MFI(Indicator):
         self._prev_tp = tp
         return self._mfi()
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["prev_tp"]  = self._prev_tp
+            s["pos_win"]  = list(self._pos_win)
+            s["neg_win"]  = list(self._neg_win)
+            s["pos_sum"]  = self._pos_sum
+            s["neg_sum"]  = self._neg_sum
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._prev_tp = state.get("prev_tp", 0.0)
+            self._pos_win = deque(state.get("pos_win", []), maxlen=self.period)
+            self._neg_win = deque(state.get("neg_win", []), maxlen=self.period)
+            self._pos_sum = state.get("pos_sum", 0.0)
+            self._neg_sum = state.get("neg_sum", 0.0)
+
     def series_defs(self):
         from trex.presentation.indicators import Volume
         return [Volume.mfi(self.period, key=self.indicator_key())]

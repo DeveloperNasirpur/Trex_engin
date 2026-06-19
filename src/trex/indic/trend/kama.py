@@ -108,6 +108,23 @@ class KAMA(Indicator):
         self._kama += sc * (value - self._kama)
         return self._kama
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win"]   = list(self._win)
+            s["diffs"] = list(self._diffs)
+            s["vol"]   = self._vol
+            s["kama"]  = self._kama
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win   = deque(state["win"],   maxlen=self.er_period + 1)
+            self._diffs = deque(state["diffs"], maxlen=self.er_period)
+            self._vol   = state["vol"]
+            self._kama  = state["kama"]
+
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.kama(self.er_period, key=self.indicator_key())]

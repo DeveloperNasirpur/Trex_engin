@@ -59,6 +59,17 @@ class OBV(Indicator):
         self._obv += sign * ohlcv.volume
         return self._obv
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["obv"] = self._obv
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._obv = state.get("obv", 0.0)
+
     def series_defs(self):
         from trex.presentation.indicators import Volume
         return [Volume.obv(key=self.indicator_key())]

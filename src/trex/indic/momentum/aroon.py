@@ -89,6 +89,19 @@ class Aroon(Indicator):
         self._win_l.append(ohlcv.low)
         return self._aroon()
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win_h"] = list(self._win_h)
+            s["win_l"] = list(self._win_l)
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win_h = deque(state.get("win_h", []), maxlen=self.period + 1)
+            self._win_l = deque(state.get("win_l", []), maxlen=self.period + 1)
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return Oscillator.aroon(self.period, key_prefix=self.indicator_key())

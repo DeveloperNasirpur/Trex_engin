@@ -145,6 +145,29 @@ class MACD(Indicator):
     def _calculate_new_value(self, value: ValueType, prev: ValueType) -> None:
         pass
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["fast_val"]   = self._fast_val
+            s["slow_val"]   = self._slow_val
+            s["macd_val"]   = self._macd_val
+            s["fast_ready"] = self._fast_ready
+            s["slow_ready"] = self._slow_ready
+            if self._ema_sig is not None:
+                s["ema_sig"] = self._ema_sig.get_state()
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._fast_val   = state.get("fast_val")
+            self._slow_val   = state.get("slow_val")
+            self._macd_val   = state.get("macd_val")
+            self._fast_ready = state.get("fast_ready", False)
+            self._slow_ready = state.get("slow_ready", False)
+            if self._ema_sig is not None and "ema_sig" in state:
+                self._ema_sig.set_state(state["ema_sig"])
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return Oscillator.macd(self.fast_period, self.slow_period, self.signal_period,

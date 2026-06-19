@@ -84,6 +84,21 @@ class WMA(Indicator):
         self._win.append(value)
         return self._wsum / self._denom
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win"]  = list(self._win)
+            s["wsum"] = self._wsum
+            s["psum"] = self._psum
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win  = deque(state["win"], maxlen=self.period)
+            self._wsum = state["wsum"]
+            self._psum = state["psum"]
+
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.wma(self.period, key=self.indicator_key())]

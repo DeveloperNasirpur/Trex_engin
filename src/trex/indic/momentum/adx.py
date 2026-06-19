@@ -146,6 +146,29 @@ class ADX(Indicator):
         self._tr_ind.add_input_value(raw)
         self._pipe.tick(raw, self)
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["tr_s"]   = self._tr_s
+            s["pdm_s"]  = self._pdm_s
+            s["ndm_s"]  = self._ndm_s
+            s["adx_s"]  = self._adx_s
+            s["dx_buf"] = list(self._dx_buf) if self._dx_buf is not None else []
+            s["phase"]  = self._phase
+            s["cur_tr"] = self._cur_tr
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._tr_s   = state.get("tr_s",  0.0)
+            self._pdm_s  = state.get("pdm_s", 0.0)
+            self._ndm_s  = state.get("ndm_s", 0.0)
+            self._adx_s  = state.get("adx_s", 0.0)
+            self._dx_buf = state.get("dx_buf", [])
+            self._phase  = state.get("phase", 2)
+            self._cur_tr = state.get("cur_tr", 0.0)
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return Oscillator.adx(self.period, key_prefix=self.indicator_key())

@@ -964,6 +964,68 @@ class TrexStore(_SqlMixin):
         )
         return len(params)
 
+    def save_indicator_state(
+        self,
+        exchange: str,
+        symbol: str,
+        tf: str,
+        indicator_key: str,
+        state: "dict[str, Any]",
+        last_bar_time: int,
+    ) -> None:
+        """Persist one indicator's internal state and last processed bar time."""
+        from psycopg.types.json import Jsonb
+        ex, table = self._resolve_names(exchange, symbol, tf)
+        states_table = f"{table}_ind_states"
+        sql_create = f"""
+            CREATE TABLE IF NOT EXISTS "{ex}"."{states_table}" (
+                indicator_key TEXT NOT NULL,
+                last_bar_time BIGINT NOT NULL,
+                state JSONB NOT NULL DEFAULT '{{}}',
+                updated_at TIMESTAMPTZ DEFAULT NOW(),
+                PRIMARY KEY (indicator_key)
+            )
+        """
+        sql_upsert = f"""
+            INSERT INTO "{ex}"."{states_table}" (indicator_key, last_bar_time, state)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (indicator_key) DO UPDATE SET
+                last_bar_time = EXCLUDED.last_bar_time,
+                state         = EXCLUDED.state,
+                updated_at    = NOW()
+        """
+        with self._connection() as conn, conn.cursor() as cur:
+            self._ensure_schema(cur, ex)
+            cur.execute(sql_create)
+            cur.execute(sql_upsert, (indicator_key, last_bar_time, Jsonb(state)))
+
+    def load_indicator_state(
+        self,
+        exchange: str,
+        symbol: str,
+        tf: str,
+        indicator_key: str,
+    ) -> "dict[str, Any] | None":
+        """Load persisted indicator state. Returns None if not found."""
+        ex, table = self._resolve_names(exchange, symbol, tf)
+        states_table = f"{table}_ind_states"
+        sql_check = f"""
+            SELECT to_regclass('"{ex}"."{states_table}"')
+        """
+        sql_select = f"""
+            SELECT last_bar_time, state FROM "{ex}"."{states_table}"
+            WHERE indicator_key = %s
+        """
+        with self._connection() as conn, conn.cursor() as cur:
+            cur.execute(sql_check)
+            if cur.fetchone()[0] is None:
+                return None
+            cur.execute(sql_select, (indicator_key,))
+            row = cur.fetchone()
+            if row is None:
+                return None
+            return {"last_bar_time": int(row[0]), "state": dict(row[1] or {})}
+
     # ── Public: writes ────────────────────────────────────────────────────────
 
     def save_indicators(

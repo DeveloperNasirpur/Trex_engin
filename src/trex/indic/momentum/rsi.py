@@ -86,6 +86,20 @@ class RSI(Indicator):
             return 100.0
         return round(100.0 - 100.0 / (1.0 + self.avg_gain / self.avg_loss), 2)
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["avg_gain"] = self.avg_gain
+            s["avg_loss"] = self.avg_loss
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self.avg_gain = state.get("avg_gain", 0.0)
+            self.avg_loss = state.get("avg_loss", 0.0)
+            self._buf = None
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return [Oscillator.rsi(self.period, key=self.indicator_key())]

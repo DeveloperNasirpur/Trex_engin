@@ -89,6 +89,23 @@ class CMO(Indicator):
         self._loss_win.append(loss)
         return self._cmo()
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["gain_win"] = list(self._gain_win)
+            s["loss_win"] = list(self._loss_win)
+            s["gain_sum"] = self._gain_sum
+            s["loss_sum"] = self._loss_sum
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._gain_win = deque(state.get("gain_win", []), maxlen=self.period)
+            self._loss_win = deque(state.get("loss_win", []), maxlen=self.period)
+            self._gain_sum = state.get("gain_sum", 0.0)
+            self._loss_sum = state.get("loss_sum", 0.0)
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return [Oscillator.cmo(self.period, key=self.indicator_key())]

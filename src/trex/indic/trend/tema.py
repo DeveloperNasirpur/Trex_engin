@@ -110,6 +110,27 @@ class TEMA(Indicator):
     def _calculate_new_value(self, value: ValueType, prev: ValueType) -> None:
         pass
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["ema1_val"] = self._ema1_val
+            s["ema2_val"] = self._ema2_val
+            if self._ema2 is not None:
+                s["ema2"] = self._ema2.get_state()
+            if self._ema3 is not None:
+                s["ema3"] = self._ema3.get_state()
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._ema1_val = state.get("ema1_val")
+            self._ema2_val = state.get("ema2_val")
+            if self._ema2 is not None and "ema2" in state:
+                self._ema2.set_state(state["ema2"])
+            if self._ema3 is not None and "ema3" in state:
+                self._ema3.set_state(state["ema3"])
+
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.tema(self.period, key=self.indicator_key())]

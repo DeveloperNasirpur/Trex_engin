@@ -76,6 +76,21 @@ class StdDev(Indicator):
         mean      = self._s / self._n_f
         return sqrt(max(self._ss / self._n_f - mean * mean, 0.0))
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win"] = list(self._win)
+            s["s"]   = self._s
+            s["ss"]  = self._ss
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win = deque(state["win"], maxlen=self.period)
+            self._s   = state["s"]
+            self._ss  = state["ss"]
+
     def series_defs(self):
         from trex.presentation.indicators import Volatility
         return [Volatility.std_dev(self.period, key=self.indicator_key())]

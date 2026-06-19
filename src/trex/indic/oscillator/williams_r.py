@@ -74,6 +74,19 @@ class WilliamsR(Indicator):
         self._win_l.append(ohlcv.low)
         return self._wr(ohlcv.close)
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win_h"] = list(self._win_h)
+            s["win_l"] = list(self._win_l)
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win_h = deque(state.get("win_h", []), maxlen=self.period)
+            self._win_l = deque(state.get("win_l", []), maxlen=self.period)
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return [Oscillator.williams_r(self.period, key=self.indicator_key())]

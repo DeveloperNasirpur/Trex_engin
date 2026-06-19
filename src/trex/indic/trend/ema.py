@@ -70,6 +70,17 @@ class EMA(Indicator):
     def _calculate_new_value(self, value: float, prev: float) -> float:
         return self._pipe.prev_output * self._k1 + value * self._k
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["buf_cleared"] = True
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._buf = None
+
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.ema(self.period, key=self.indicator_key())]

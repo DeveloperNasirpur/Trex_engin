@@ -268,6 +268,42 @@ class AutoEngine:
             sym, tf, n_up_to_date, len(last_calc),
         )
 
+        # 3b. Load and restore indicator states
+        states: dict[str, dict] = {}
+        for ind in indicators:
+            ikey = ind.indicator_key()
+            try:
+                saved = self._db.load_indicator_state(
+                    self._exchange, sym, tf, ikey
+                )
+                if saved:
+                    states[ikey] = saved
+            except Exception:
+                log.exception("seed: could not load state for %s", ikey)
+
+        # Determine whether we can use fast-path (all states available)
+        all_have_state = len(states) == len(indicators) and all(
+            states.get(ind.indicator_key()) for ind in indicators
+        )
+        if all_have_state:
+            min_last_time = min(
+                s["last_bar_time"] for s in states.values()
+            )
+            for ind in indicators:
+                ikey = ind.indicator_key()
+                ind.set_state(states[ikey]["state"])
+            bars_to_feed = [b for b in bars if b.time > min_last_time]
+            log.info(
+                "seed(%s %s): state restored — replaying %d new bars only.",
+                sym, tf, len(bars_to_feed),
+            )
+        else:
+            bars_to_feed = bars
+            log.info(
+                "seed(%s %s): no saved state — full replay of %d bars.",
+                sym, tf, len(bars),
+            )
+
         # 4. Wire seed hooks — collect new points, no broadcasting
         #    pending[bar_time][series_key] = value
         pending: dict[int, dict[str, float]] = {}
@@ -286,9 +322,9 @@ class AutoEngine:
         for ind in indicators:
             ind._set_emit_hook(seed_hook)
 
-        # 5. Feed ALL bars through engine (warm-up + collect new points)
-        log.info("seed(%s %s): running indicator calculations on %d bars...", sym, tf, len(bars))
-        for bar in bars:
+        # 5. Feed bars through engine (warm-up + collect new points)
+        log.info("seed(%s %s): running indicator calculations on %d bars...", sym, tf, len(bars_to_feed))
+        for bar in bars_to_feed:
             ctx.provide(OHLCV.from_bar(bar, symbol=sym, str_time=tf))
 
         # 6. Batch-save new indicator values to DB
@@ -304,6 +340,22 @@ class AutoEngine:
                 log.exception("seed(%s %s): failed to write indicators to DB.", sym, tf)
         else:
             log.info("seed(%s %s): all indicators already up-to-date in DB.", sym, tf)
+
+        # 6b. Save indicator states to DB for fast restart next time
+        if bars_to_feed:
+            last_bar_time = bars_to_feed[-1].time
+            for ind in indicators:
+                state = ind.get_state()
+                if state:
+                    try:
+                        self._db.save_indicator_state(
+                            self._exchange, sym, tf,
+                            ind.indicator_key(), state, last_bar_time,
+                        )
+                    except Exception:
+                        log.exception(
+                            "seed: failed to save state for %s", ind.indicator_key()
+                        )
 
         # 7. Load in-memory store (recent bars for client snapshots)
         self._store.seed(sym, tf, bars[-self._snapshot_sz:])

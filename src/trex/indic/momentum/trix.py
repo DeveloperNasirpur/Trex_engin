@@ -76,6 +76,17 @@ class TRIX(Indicator):
     def _calculate_new_value(self, value: ValueType, prev: ValueType) -> None:
         pass
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["prev_e3"] = self._prev_e3
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._prev_e3 = state.get("prev_e3")
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return [Oscillator.trix(self.period, key=self.indicator_key())]

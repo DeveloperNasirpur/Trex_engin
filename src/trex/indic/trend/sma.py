@@ -73,6 +73,19 @@ class SMA(Indicator):
         self._win.append(value)
         return self._total / self._period_f
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win"]   = list(self._win)
+            s["total"] = self._total
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win   = deque(state["win"], maxlen=self.period)
+            self._total = state["total"]
+
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.sma(self.period, key=self.indicator_key())]

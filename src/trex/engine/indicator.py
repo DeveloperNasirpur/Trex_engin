@@ -72,6 +72,32 @@ class Indicator(SeriesMixin, PipelineHost, ABC):
         """Human-readable identifier used for DB field name, chart ID, and context key."""
         return self._indicator_id or self.context_key
 
+    def get_state(self) -> dict:
+        """Return serializable internal state for DB persistence.
+
+        Override in subclasses to add indicator-specific fields.
+        Returns {} if the indicator has not completed warm-up yet.
+        """
+        if not self._pipe.is_running:
+            return {}
+        return {
+            "prev_value":  self._pipe.prev_value,
+            "prev_output": self._pipe.prev_output,
+        }
+
+    def set_state(self, state: dict) -> None:
+        """Restore internal state from DB.
+
+        Override in subclasses to restore indicator-specific fields.
+        Calling this skips warm-up and puts the indicator in run phase.
+        """
+        if not state:
+            return
+        self._pipe.prev_value  = state.get("prev_value")
+        self._pipe.prev_output = state.get("prev_output")
+        # Advance pipeline to run phase without replaying history
+        self._pipe._step = self._pipe._run_step
+
     def __init__(
         self,
         *,

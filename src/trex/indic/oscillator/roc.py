@@ -68,6 +68,17 @@ class ROC(Indicator):
         self._win.append(value)
         return (value - oldest) / oldest * 100.0
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win"] = list(self._win)
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win = deque(state["win"], maxlen=self.period + 1)
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return [Oscillator.roc(self.period, key=self.indicator_key())]

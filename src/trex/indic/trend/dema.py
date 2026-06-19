@@ -72,6 +72,21 @@ class DEMA(Indicator):
     def _calculate_new_value(self, value: ValueType, prev: ValueType) -> None:
         pass
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["ema1_val"] = self._ema1_val
+            if self._ema2 is not None:
+                s["ema2"] = self._ema2.get_state()
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._ema1_val = state.get("ema1_val")
+            if self._ema2 is not None and "ema2" in state:
+                self._ema2.set_state(state["ema2"])
+
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.dema(self.period, key=self.indicator_key())]

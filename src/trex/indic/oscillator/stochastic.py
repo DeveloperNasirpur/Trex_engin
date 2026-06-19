@@ -113,6 +113,25 @@ class Stochastic(Indicator):
         self._cur_k = k
         self._sma_d.add_input_value(k)
 
+    def get_state(self) -> dict:
+        s = super().get_state()
+        if s:
+            s["win_h"] = list(self._win_h)
+            s["win_l"] = list(self._win_l)
+            s["cur_k"] = self._cur_k
+            if self._sma_d is not None:
+                s["sma_d"] = self._sma_d.get_state()
+        return s
+
+    def set_state(self, state: dict) -> None:
+        super().set_state(state)
+        if state:
+            self._win_h = deque(state.get("win_h", []), maxlen=self.k_period)
+            self._win_l = deque(state.get("win_l", []), maxlen=self.k_period)
+            self._cur_k = state.get("cur_k")
+            if self._sma_d is not None and "sma_d" in state:
+                self._sma_d.set_state(state["sma_d"])
+
     def series_defs(self):
         from trex.presentation.indicators import Oscillator
         return Oscillator.stochastic(self.k_period, d=self.d_period,
