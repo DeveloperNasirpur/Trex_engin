@@ -1,13 +1,40 @@
 """trex — Streaming technical indicator engine."""
+import atexit as _atexit
+
 from trex.base import OHLCV, OHLCVFactory, ValueExtractor, Timeframe, ListenerKey
 from trex.engine import Indicator, Pipeline, ContextIndicator, ctx
 from trex.engine.context import IndicatorInfo
 from trex.api import (
+    # ── Trend / Moving Averages ────────────────────────────────────────────────
     sma, ema, wma, hma, dema, tema, zlema, vwma, kama,
+    # ── Volatility (classic) ──────────────────────────────────────────────────
     tr, atr, stddev, bbands, keltner, donchian,
-    rsi, macd, trix, adx, aroon,
-    stochastic, cci, williams_r, roc, momentum, mfi, obv, cmo,
+    # ── Momentum / Oscillators ────────────────────────────────────────────────
+    rsi, macd, trix, adx, aroon, stochastic, cci, williams_r, roc, momentum,
+    mfi, obv, cmo,
+    # ── New momentum indicators ───────────────────────────────────────────────
+    ao, ac, tsi, dpo, kst, coppock, rvi, fisher, vortex, ppo, apo,
+    stochrsi, uo, chop, force_index,
+    # ── Volume ────────────────────────────────────────────────────────────────
+    ad, adosc, cmf, eom, nvi, pvi, pvt, vo, vroc,
+    # ── Statistics ────────────────────────────────────────────────────────────
+    zscore, variance, linreg_slope, correl, percentrank,
+    # ── Volatility (extended) ─────────────────────────────────────────────────
+    natr, ui, hv, chandelier,
+    # ── Overlay / Price ───────────────────────────────────────────────────────
     vwap, supertrend, ichimoku, psar, zigzag_base,
+    # ── Candlestick patterns — single ────────────────────────────────────────
+    doji, dragonfly_doji, gravestone_doji, hammer, inverted_hammer,
+    hanging_man, shooting_star, marubozu, spinning_top, long_legged_doji,
+    bullish_belt, bearish_belt, high_wave, rickshaw_man, umbrella_line,
+    # ── Candlestick patterns — two-candle ────────────────────────────────────
+    bullish_engulfing, bearish_engulfing, bullish_harami, bearish_harami,
+    piercing, dark_cloud_cover, tweezer, kicking, on_neck, matching_low,
+    # ── Candlestick patterns — three-candle ──────────────────────────────────
+    morning_star, evening_star, morning_doji_star, evening_doji_star,
+    three_white_soldiers, three_black_crows, three_inside_up, three_inside_down,
+    deliberation, identical_three_crows,
+    # ── Management ────────────────────────────────────────────────────────────
     de_attach, de_attach_by_key, indicators,
     attach_listener_timeframe, de_attach_listener_timeframe,
     start_history_provide,
@@ -72,7 +99,7 @@ def init(
         trex.ema("BTCUSDT", "1m", period=20, visible=True)
         trex.rsi("BTCUSDT", "1m", period=14, visible=True, listener=on_rsi)
 
-        trex.seed(historical_bars, symbol="BTCUSDT")
+        trex.seed("BTCUSDT")
 
         while True:
             bar = exchange.next_bar()
@@ -102,6 +129,9 @@ def init(
     )
     _auto_mod._engine = engine
     engine.start()
+
+    # Auto-cleanup on interpreter exit — user never needs to call trex.stop()
+    _atexit.register(engine.stop)
 
 
 # ── Feed API ──────────────────────────────────────────────────────────────────
@@ -151,6 +181,8 @@ def seed(symbol: str, timeframe: str | None = None) -> None:
     On first run: feeds all bars through every indicator, saves results to DB.
     On subsequent runs: only calculates and saves bars added since last run.
     Already-calculated indicator values are never rewritten.
+    Crash-safe: progress is checkpointed every 10 000 bars so a crash never
+    forces a full replay from scratch.
 
     Parameters
     ----------
@@ -180,7 +212,11 @@ def seed(symbol: str, timeframe: str | None = None) -> None:
 
 
 def stop() -> None:
-    """Gracefully shut down the WebSocket server."""
+    """Gracefully shut down the WebSocket server.
+
+    Not required in most cases — ``trex.init()`` registers this automatically
+    via ``atexit`` so the server always shuts down cleanly on exit.
+    """
     from trex.engine.auto import _engine
     if _engine is not None:
         _engine.stop()
@@ -194,7 +230,6 @@ def client_count() -> int:
 
 # ── Re-exports ────────────────────────────────────────────────────────────────
 
-# Lazy import for type hint only (avoids import at module load time)
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from trex.domain.types import Bar
@@ -206,12 +241,36 @@ __all__ = [
     "Indicator", "Pipeline", "ContextIndicator", "IndicatorInfo", "ctx",
     # Auto API
     "init", "push", "seed", "stop", "client_count",
-    # Indicator registration (all accept visible=True/False)
+    # Trend / Moving Averages
     "sma", "ema", "wma", "hma", "dema", "tema", "zlema", "vwma", "kama",
+    # Volatility (classic)
     "tr", "atr", "stddev", "bbands", "keltner", "donchian",
-    "rsi", "macd", "trix", "adx", "aroon",
-    "stochastic", "cci", "williams_r", "roc", "momentum", "mfi", "obv", "cmo",
+    # Momentum / Oscillators
+    "rsi", "macd", "trix", "adx", "aroon", "stochastic", "cci",
+    "williams_r", "roc", "momentum", "mfi", "obv", "cmo",
+    # New momentum
+    "ao", "ac", "tsi", "dpo", "kst", "coppock", "rvi", "fisher",
+    "vortex", "ppo", "apo", "stochrsi", "uo", "chop", "force_index",
+    # Volume
+    "ad", "adosc", "cmf", "eom", "nvi", "pvi", "pvt", "vo", "vroc",
+    # Statistics
+    "zscore", "variance", "linreg_slope", "correl", "percentrank",
+    # Volatility (extended)
+    "natr", "ui", "hv", "chandelier",
+    # Overlay / Price
     "vwap", "supertrend", "ichimoku", "psar", "zigzag_base",
+    # Candlestick patterns — single
+    "doji", "dragonfly_doji", "gravestone_doji", "hammer", "inverted_hammer",
+    "hanging_man", "shooting_star", "marubozu", "spinning_top",
+    "long_legged_doji", "bullish_belt", "bearish_belt", "high_wave",
+    "rickshaw_man", "umbrella_line",
+    # Candlestick patterns — two-candle
+    "bullish_engulfing", "bearish_engulfing", "bullish_harami", "bearish_harami",
+    "piercing", "dark_cloud_cover", "tweezer", "kicking", "on_neck", "matching_low",
+    # Candlestick patterns — three-candle
+    "morning_star", "evening_star", "morning_doji_star", "evening_doji_star",
+    "three_white_soldiers", "three_black_crows", "three_inside_up",
+    "three_inside_down", "deliberation", "identical_three_crows",
     # Management
     "de_attach", "de_attach_by_key", "indicators",
     "attach_listener_timeframe", "de_attach_listener_timeframe",
