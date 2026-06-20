@@ -310,6 +310,54 @@ class TrexServer:
             filter=filter,
         )
 
+    async def broadcast_secondary_bar(self, symbol: str, bar: Bar) -> int:
+        """
+        Send ``chart_bar`` to every session that has *symbol* in a secondary
+        chart panel.  Each session may have the symbol in a different chartId,
+        so we iterate session._charts per session.
+        """
+        import json as _json
+        _sym = symbol.upper()
+        sent = 0
+        for s in self.sessions:
+            for cid, cstate in s._charts.items():
+                if cstate.get("symbol", "").upper() == _sym:
+                    payload = _json.dumps(
+                        {"type": "chart_bar", "chartId": cid, "bar": bar.to_wire()},
+                        separators=(",", ":"), ensure_ascii=False,
+                    )
+                    try:
+                        async with s._send_lock:
+                            await s._ws.send(payload)
+                        sent += 1
+                    except Exception:
+                        s._alive = False
+        return sent
+
+    async def broadcast_chart_bar(
+        self,
+        chart_id: str,
+        bar:      Bar,
+        filter:   Callable[[TrexSession], bool] | None = None,
+    ) -> int:
+        """Push a live bar update for a secondary chart panel."""
+        import json as _json
+        payload = _json.dumps(
+            {"type": "chart_bar", "chartId": chart_id, "bar": bar.to_wire()},
+            separators=(",", ":"), ensure_ascii=False,
+        )
+        sent = 0
+        for s in self.sessions:
+            if filter and not filter(s):
+                continue
+            try:
+                async with s._send_lock:
+                    await s._ws.send(payload)
+                sent += 1
+            except Exception:
+                s._alive = False
+        return sent
+
     async def broadcast_toast(
         self,
         msg:    str,

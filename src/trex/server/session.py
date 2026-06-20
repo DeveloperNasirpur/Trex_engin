@@ -270,6 +270,21 @@ class TrexSession:
                 self.timeframe       = msg.get("timeframe") or None
                 self.client_name     = str(msg.get("client", ""))
                 self.client_version  = str(msg.get("version", ""))
+                # Validate protocol version: reject incompatible major versions
+                proto = str(msg.get("protocol", ""))
+                if proto:
+                    try:
+                        client_major = int(proto.split(".")[0])
+                        if client_major != 2:
+                            await self._send({
+                                "type":    "error",
+                                "code":    "PROTOCOL_MISMATCH",
+                                "message": f"Protocol major version {client_major} not supported; server requires 2.x",
+                            })
+                            self._alive = False
+                            return
+                    except (ValueError, IndexError):
+                        pass
 
             elif t == "symbol":
                 self.symbol = str(msg.get("symbol", "")) or None

@@ -138,9 +138,11 @@ class AutoEngine:
         # Supplement from DB if available
         if self._db is not None:
             try:
-                for sym in self._db.get_tables(self._exchange):
-                    # table names are like BTCUSDT_1m → strip suffix
-                    base = sym.split("_")[0].upper()
+                # Table names: BTCUSDT_1m, BNB_USDT_1h → strip last _TF suffix
+                _tf_suffixes = {"1m","3m","5m","15m","30m","1h","2h","4h","6h","8h","12h","1d","3d","1w","1M"}
+                for tbl in self._db.get_tables(self._exchange):
+                    parts = tbl.rsplit("_", 1)
+                    base = (parts[0] if len(parts) == 2 and parts[1] in _tf_suffixes else tbl).upper()
                     if base and base not in seen:
                         seen.add(base)
                         symbols.append({"symbol": base})
@@ -478,12 +480,15 @@ class AutoEngine:
         #    Triggers _live_hook → broadcast indicators + save to DB
         ctx.provide(OHLCV.from_bar(bar, symbol=sym, str_time=tf))
 
-        # 4. Broadcast raw bar to symbol-subscribed clients
+        # 4. Broadcast raw bar to symbol-subscribed clients (main chart)
         _sym = sym
         self._server.broadcast_bar(
             bar,
             filter=lambda s: (s.symbol or "").upper() == _sym,
         )
+
+        # 5. Broadcast chart_bar to sessions that track sym in a secondary chart
+        self._server.broadcast_secondary_bar(sym, bar)
 
     # ── Legacy / no-DB manual seed ────────────────────────────────────────────
 

@@ -425,6 +425,29 @@ class SyncServer:
                 return _filt(SyncSession(s, _loop))  # type: ignore[arg-type]
         return self._submit(self._async_srv.broadcast_bar(bar, filter=async_filter)) or 0
 
+    def broadcast_secondary_bar(self, symbol: str, bar: Bar) -> int:
+        """Push chart_bar to all sessions tracking symbol in a secondary chart. Thread-safe."""
+        if not self._async_srv:
+            return 0
+        return self._submit(self._async_srv.broadcast_secondary_bar(symbol, bar)) or 0
+
+    def broadcast_chart_bar(
+        self,
+        chart_id: str,
+        bar:      Bar,
+        filter:   Callable[[SyncSession], bool] | None = None,
+    ) -> int:
+        """Push a secondary-chart bar to matching sessions. Thread-safe."""
+        if not self._async_srv:
+            return 0
+        async_filter: Callable[[TrexSession], bool] | None = None
+        if filter:
+            _filt = filter
+            _loop = self._loop
+            def async_filter(s: TrexSession) -> bool:  # type: ignore[misc]
+                return _filt(SyncSession(s, _loop))  # type: ignore[arg-type]
+        return self._submit(self._async_srv.broadcast_chart_bar(chart_id, bar, filter=async_filter)) or 0
+
     def broadcast(self, payload: dict[str, Any]) -> int:
         """Send an arbitrary payload to all clients. Thread-safe."""
         if not self._async_srv:
