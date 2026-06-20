@@ -49,8 +49,8 @@ class Atr(Indicator):
         self.key = api.tr(self.context_symbol, self.tf, listener=self._on_tr)
 
     def dispatch(self) -> None:
-        api = self._ctx.api
-        api.de_attach_by_key(self.key)
+        if self._ctx is not None and self.key is not None:
+            self._ctx.api.de_attach_by_key(self.key)
 
     def __init__(self, period: int = 14) -> None:
         super().__init__(save_input=False)
