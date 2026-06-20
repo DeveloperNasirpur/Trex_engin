@@ -157,6 +157,11 @@ class MACD(Indicator):
             s["macd_val"]   = self._macd_val
             s["fast_ready"] = self._fast_ready
             s["slow_ready"] = self._slow_ready
+            # Persist sub-EMA states so they don't need to re-warm on restore
+            if self._ema_fast is not None:
+                s["ema_fast"] = self._ema_fast.get_state()
+            if self._ema_slow is not None:
+                s["ema_slow"] = self._ema_slow.get_state()
             if self._ema_sig is not None:
                 s["ema_sig"] = self._ema_sig.get_state()
         return s
@@ -169,6 +174,10 @@ class MACD(Indicator):
             self._macd_val   = state.get("macd_val")
             self._fast_ready = state.get("fast_ready", False)
             self._slow_ready = state.get("slow_ready", False)
+            if self._ema_fast is not None and "ema_fast" in state:
+                self._ema_fast.set_state(state["ema_fast"])
+            if self._ema_slow is not None and "ema_slow" in state:
+                self._ema_slow.set_state(state["ema_slow"])
             if self._ema_sig is not None and "ema_sig" in state:
                 self._ema_sig.set_state(state["ema_sig"])
 

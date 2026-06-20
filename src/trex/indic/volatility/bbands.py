@@ -104,6 +104,12 @@ class BollingerBands(Indicator):
                         middle=self._sma_val,
                         lower=self._sma_val - band))
 
+    def get_state(self) -> dict:
+        # BBands has no own state — entirely driven by SMA and StdDev sub-indicators.
+        # Returning {} forces a full replay on restore, avoiding missing output from
+        # the sub-indicators' warmup window.
+        return {}
+
     def _first_calculate(self, value: ValueType, prev: ValueType) -> bool:
         return True
 
