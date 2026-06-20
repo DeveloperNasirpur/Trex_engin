@@ -135,6 +135,7 @@ class CandleStore:
                 else:
                     self._bars.insert(idx, bar)
                     self._times.insert(idx, bar.time)
+                    self._evict()
 
             else:
                 # New bar — the previous bar just closed

@@ -75,7 +75,7 @@ class Pipeline:
         "_extractor", "_save_output",
         "output_values", "prev_output",
         "input_values", "prev_value",
-        "callbacks", "_warmup_remain",
+        "callbacks", "_warmup_remain", "_warmup_init",
         "_step", "_post_emit_hook",
     )
 
@@ -95,6 +95,7 @@ class Pipeline:
         self.input_values:   deque[Any] | None         = deque(maxlen=max_input) if save_input else None
         self.prev_value:     Any                       = None
         self.callbacks:      dict[str, Callable[..., Any]] = {}
+        self._warmup_init:   int                       = warmup
         self._warmup_remain: int                       = warmup
         self._post_emit_hook: Callable[[Any], None] | None = None  # server hook
         self._step: Callable[..., None] = (
@@ -156,13 +157,15 @@ class Pipeline:
     # ── Reset ─────────────────────────────────────────────────────────────────
 
     def reset(self) -> None:
-        """Clear ring-buffers and callbacks; phase pointer is preserved."""
+        """Clear ring-buffers and callbacks; restart from the initial phase."""
         if self.input_values is not None:
             self.input_values.clear()
         self.output_values.clear()
         self.callbacks.clear()
-        self.prev_output = None
-        self.prev_value  = None
+        self.prev_output    = None
+        self.prev_value     = None
+        self._warmup_remain = self._warmup_init
+        self._step = self._warmup_step if self._warmup_init > 0 else self._boot_step
 
     # ── Properties ────────────────────────────────────────────────────────────
 

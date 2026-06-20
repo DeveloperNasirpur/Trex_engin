@@ -135,6 +135,8 @@ class SeriesMixin:
             if isinstance(t, (int, float)):
                 ts = int(t)
             elif isinstance(t, datetime.datetime):
+                if t.tzinfo is None:
+                    t = t.replace(tzinfo=datetime.timezone.utc)
                 ts = int(t.timestamp())
         
         points = self._make_points(value, ts)

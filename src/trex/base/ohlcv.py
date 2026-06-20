@@ -113,19 +113,21 @@ class ValueExtractor:
     """Static OHLCV field extractors برای pipeline ``extractor`` parameter."""
 
     @staticmethod
-    def extract_open(v: OHLCV)   -> float: return v.open   or 0.0
+    def extract_open(v: OHLCV)   -> float: return float(v.open)   if v.open   is not None else 0.0
     @staticmethod
-    def extract_high(v: OHLCV)   -> float: return v.high   or 0.0
+    def extract_high(v: OHLCV)   -> float: return float(v.high)   if v.high   is not None else 0.0
     @staticmethod
-    def extract_low(v: OHLCV)    -> float: return v.low    or 0.0
+    def extract_low(v: OHLCV)    -> float: return float(v.low)    if v.low    is not None else 0.0
     @staticmethod
-    def extract_close(v: OHLCV)  -> float: return v.close  or 0.0
+    def extract_close(v: OHLCV)  -> float: return float(v.close)  if v.close  is not None else 0.0
     @staticmethod
-    def extract_volume(v: OHLCV) -> float: return v.volume or 0.0
+    def extract_volume(v: OHLCV) -> float: return float(v.volume) if v.volume is not None else 0.0
 
     @staticmethod
     def extract_hl2(v: OHLCV) -> float:
-        return ((v.high or 0.0) + (v.low or 0.0)) / 2.0
+        h = float(v.high)  if v.high is not None else 0.0
+        l = float(v.low)   if v.low  is not None else 0.0
+        return (h + l) / 2.0
 
     @staticmethod
     def extract_hlc3(v: OHLCV) -> float:

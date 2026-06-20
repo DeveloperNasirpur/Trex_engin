@@ -102,8 +102,8 @@ class ContextApi:
     def rsi(self, symbol: str, timeframe: str = Timeframe.m1, period: int = 14,
             value_extractor: Callable[..., Any] = ValueExtractor.extract_close,
             listener: Callable[[Any], None] | None = None) -> ListenerKey:
-        from trex.indic.momentum.rsi import Rsi
-        return self._register(Rsi, symbol, timeframe, listener,
+        from trex.indic.momentum.rsi import RSI
+        return self._register(RSI, symbol, timeframe, listener,
                                period=period, value_extractor=value_extractor)
 
     def de_attach_by_key(self, keys: "ListenerKey | list[ListenerKey]") -> bool:

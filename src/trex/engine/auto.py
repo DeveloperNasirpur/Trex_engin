@@ -193,7 +193,7 @@ class AutoEngine:
         store = self._store.get_store(symbol, tf)
         bars  = store.recent(self._snapshot_sz)
         defs  = list(self._definitions) or None
-        cache = dict(store.indicator_cache) or None
+        cache = {k: list(v) for k, v in store.indicator_cache.items()} or None
         session.chart_snapshot(
             chart_id,
             bars,
@@ -207,7 +207,7 @@ class AutoEngine:
         store = self._store.get_store(symbol, tf)
         bars  = store.recent(self._snapshot_sz)
         defs  = list(self._definitions) or None
-        cache = dict(store.indicator_cache) or None
+        cache = {k: list(v) for k, v in store.indicator_cache.items()} or None
         session.snapshot(
             bars,
             symbol      = symbol or None,

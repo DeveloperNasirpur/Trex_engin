@@ -372,6 +372,10 @@ class ContextIndicator:
             )
         """
         with self._lock:
+            # Store first so any indicator registered concurrently gets the hook
+            self._server_broadcast_fn  = broadcast_fn
+            self._server_define_fn     = define_fn
+            self._server_symbol_filter = symbol
             for sym, bucket in self._indicators.items():
                 if symbol is not None and sym != symbol:
                     continue
@@ -383,11 +387,6 @@ class ContextIndicator:
                         defs = ind.series_defs()
                         if defs:
                             define_fn(*defs)
-
-        # Store for future indicators registered after attach
-        self._server_broadcast_fn = broadcast_fn
-        self._server_define_fn    = define_fn
-        self._server_symbol_filter = symbol
 
     def detach_server(self) -> None:
         """همه indicators را از server جدا کن."""
