@@ -10,7 +10,7 @@ Hot-path (run phase):
     prev_output × k1 + value × k      ← two multiplications + one addition, zero branch
 """
 
-from typing import Callable
+from typing import Callable, Optional
 
 from trex.base.ohlcv import ValueExtractor, OHLCV
 from trex.engine.indicator import Indicator
