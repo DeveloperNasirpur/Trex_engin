@@ -45,7 +45,8 @@ class Atr(Indicator):
         pass
 
     def init_depends(self) -> None:
-        self.key = api.tr(self.context_symbol, self.tf,listener=self._on_tr)
+        api = self._ctx.api
+        self.key = api.tr(self.context_symbol, self.tf, listener=self._on_tr)
 
     def dispatch(self) -> None:
         api = self._ctx.api

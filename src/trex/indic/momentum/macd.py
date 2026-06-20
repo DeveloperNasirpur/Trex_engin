@@ -85,9 +85,13 @@ class MACD(Indicator):
         self._ema_sig.add_callback_listener(self.context_key, self._on_signal)
 
     def dispatch(self) -> None:
-        self._ema_fast.remove_callback_listener(self.context_key)
-        self._ema_slow.remove_callback_listener(self.context_key)
-        del self._ema_sig
+        if self._ema_fast is not None:
+            self._ema_fast.remove_callback_listener(self.context_key)
+        if self._ema_slow is not None:
+            self._ema_slow.remove_callback_listener(self.context_key)
+        if self._ema_sig is not None:
+            self._ema_sig.remove_callback_listener(f"{self.context_key}:sig")
+            self._ema_sig = None
 
     def __init__(
         self,

@@ -269,7 +269,7 @@ def broadcast_drawing(drawing: dict) -> None:
     dropped. Safe to call before ``trex.init()`` — also silently dropped.
     """
     from trex.engine.auto import _engine
-    if _engine is None:
+    if _engine is None or _engine._server is None:
         return
     _engine._server.broadcast({"type": "drawing_upsert", "drawing": drawing})
 
@@ -284,7 +284,7 @@ def delete_drawing(drawing_id: str) -> None:
         The same ``id`` string that was used in ``broadcast_drawing()``.
     """
     from trex.engine.auto import _engine
-    if _engine is None:
+    if _engine is None or _engine._server is None:
         return
     _engine._server.broadcast({"type": "drawing_delete", "drawingId": drawing_id})
 
