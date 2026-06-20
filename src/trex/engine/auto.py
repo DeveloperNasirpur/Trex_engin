@@ -368,12 +368,17 @@ class AutoEngine:
             ind.indicator_key() in states for ind in indicators
         )
         if all_have_state:
-            min_last_time = min(
-                s["last_bar_time"] for s in states.values()
-            )
+            all_bar_times = [s["last_bar_time"] for s in states.values()]
+            min_last_time = min(all_bar_times)
+            # Restore state only for indicators AT the minimum checkpoint.
+            # Indicators ahead of min_last_time must NOT get their state restored:
+            # they would re-receive bars they already computed, corrupting Wilder
+            # smoothing (or any other stateful calculation). Instead, let them
+            # recompute from min_last_time with a fresh internal state.
             for ind in indicators:
                 ikey = ind.indicator_key()
-                ind.set_state(states[ikey]["state"])
+                if states[ikey]["last_bar_time"] <= min_last_time:
+                    ind.set_state(states[ikey]["state"])
             bars_to_feed = [b for b in bars if b.time > min_last_time]
             log.info(
                 "seed(%s %s): state restored — replaying %d new bars only.",

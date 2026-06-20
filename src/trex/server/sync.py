@@ -405,7 +405,8 @@ class SyncServer:
         try:
             fut = asyncio.run_coroutine_threadsafe(coro, self._loop)
             return fut.result(timeout=5)
-        except Exception:
+        except Exception as exc:
+            log.debug("broadcast submit failed: %s", exc)
             return None
 
     def broadcast_bar(

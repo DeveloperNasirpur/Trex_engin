@@ -373,10 +373,6 @@ class TrexServer:
     # ── Connection handler ────────────────────────────────────────────────────
 
     async def _handle(self, ws: Any) -> None:  # ws: ServerConnection
-        if self.max_clients and len(self.sessions) >= self.max_clients:
-            await ws.close(1013, "server full")
-            return
-
         session = TrexSession(ws)
 
         # Wire all hooks into the session
@@ -406,6 +402,9 @@ class TrexServer:
             log.debug("[%s] hello error: %s", session.id[:8], exc)
 
         async with self._lock:
+            if self.max_clients and len(self._sessions) >= self.max_clients:
+                await ws.close(1013, "server full")
+                return
             self._sessions[session.id] = session
 
         # Fire on_connect in its own task so errors don't kill the recv loop
