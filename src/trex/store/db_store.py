@@ -953,16 +953,22 @@ class TrexStore(_SqlMixin):
             all_keys.update(normalised.keys())
             params.append((ts, Jsonb(normalised)))
 
+        # Write in chunks of 5 000 rows to avoid giant single transactions
+        # that risk timeout / OOM on large seeds (e.g. 1 M candles).
+        CHUNK = 5_000
+        written = 0
         with self._connection() as conn, conn.cursor() as cur:
             self._ensure_schema(cur, ex)
             self._ensure_table(cur, ex, table)
-            cur.executemany(sql, params)
+            for i in range(0, len(params), CHUNK):
+                cur.executemany(sql, params[i : i + CHUNK])
+                written += min(CHUNK, len(params) - i)
 
         self._touch_meta(ex, table, all_keys)
         _LOG.debug(
-            "bulk_update_indicators %s.%s: %d row(s).", ex, table, len(params)
+            "bulk_update_indicators %s.%s: %d row(s).", ex, table, written
         )
-        return len(params)
+        return written
 
     def save_indicator_state(
         self,

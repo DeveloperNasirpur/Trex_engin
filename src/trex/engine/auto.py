@@ -388,7 +388,37 @@ class AutoEngine:
 
         # 4. Wire seed hooks — collect new points, no broadcasting
         #    pending[bar_time][series_key] = value
+        #    Flushed to DB every CHUNK_SIZE bars to avoid holding 1M rows in RAM
+        #    and to allow crash-recovery on the next run.
+        CHUNK_SIZE = 10_000
         pending: dict[int, dict[str, float]] = {}
+        bars_since_flush = 0
+
+        _last_flushed_bar: list[int] = [0]  # mutable cell for closure
+
+        def _flush_pending(last_bar_time: int) -> None:
+            nonlocal bars_since_flush
+            if not pending:
+                bars_since_flush = 0
+                return
+            try:
+                self._db.bulk_update_indicators(self._exchange, sym, tf, pending)
+                # Checkpoint indicator states so crash-recovery skips flushed bars
+                for ind in indicators:
+                    state = ind.get_state()
+                    if state:
+                        try:
+                            self._db.save_indicator_state(
+                                self._exchange, sym, tf,
+                                ind.indicator_key(), state, last_bar_time,
+                            )
+                        except Exception:
+                            pass
+                _last_flushed_bar[0] = last_bar_time
+            except Exception:
+                log.exception("seed(%s %s): chunk flush failed (retry on next run)", sym, tf)
+            pending.clear()
+            bars_since_flush = 0
 
         def _make_seed_hook(series_last_calc: dict[str, int]) -> Any:
             def _seed_hook(data: "dict[str, list[Point]]") -> None:
@@ -406,37 +436,38 @@ class AutoEngine:
 
         # 5. Feed bars through engine (warm-up + collect new points)
         log.info("seed(%s %s): running indicator calculations on %d bars...", sym, tf, len(bars_to_feed))
+        _current_bar_time = 0
         for bar in bars_to_feed:
             ctx.provide(OHLCV.from_bar(bar, symbol=sym, str_time=tf))
+            _current_bar_time = bar.time
+            bars_since_flush += 1
+            if bars_since_flush >= CHUNK_SIZE:
+                _flush_pending(_current_bar_time)
 
-        # 6. Batch-save new indicator values to DB
+        # 6. Flush remaining indicator values to DB
         if pending:
             log.info(
-                "seed(%s %s): saving %d new indicator points to DB...",
+                "seed(%s %s): saving final %d indicator points to DB...",
                 sym, tf, len(pending),
             )
-            try:
-                self._db.bulk_update_indicators(self._exchange, sym, tf, pending)
-                log.info("seed(%s %s): DB save complete.", sym, tf)
-            except Exception:
-                log.exception("seed(%s %s): failed to write indicators to DB.", sym, tf)
+            _flush_pending(_current_bar_time)
         else:
             log.info("seed(%s %s): all indicators already up-to-date in DB.", sym, tf)
 
-        # 6b. Save indicator states to DB for fast restart next time
-        if bars_to_feed:
-            last_bar_time = bars_to_feed[-1].time
+        # 6b. Final state checkpoint (covers the case where last chunk was flushed
+        #     mid-loop but the very last bar's state wasn't saved yet)
+        if bars_to_feed and _current_bar_time > _last_flushed_bar[0]:
             for ind in indicators:
                 state = ind.get_state()
                 if state:
                     try:
                         self._db.save_indicator_state(
                             self._exchange, sym, tf,
-                            ind.indicator_key(), state, last_bar_time,
+                            ind.indicator_key(), state, _current_bar_time,
                         )
                     except Exception:
                         log.exception(
-                            "seed: failed to save state for %s", ind.indicator_key()
+                            "seed: failed to save final state for %s", ind.indicator_key()
                         )
 
         # 7. Load in-memory store (recent bars for client snapshots)
