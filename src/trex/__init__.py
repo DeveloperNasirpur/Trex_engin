@@ -236,6 +236,59 @@ def client_count() -> int:
     return _engine.client_count if _engine is not None else 0
 
 
+def broadcast_drawing(drawing: dict) -> None:
+    """
+    Push a drawing (position marker, order line, annotation) to all connected
+    TrexTerminal clients.
+
+    The *drawing* dict must conform to the protocol ``drawing_upsert`` shape::
+
+        {
+            "id":        "pos_123",         # unique, stable across updates
+            "tool":      "longPosition",    # or "shortPosition", "horizontal", etc.
+            "points":    [{"time": 1700000000, "price": 42000.0},
+                          {"time": 1700000060, "price": 42000.0}],
+            "style":     {"color": "#26a69a"},
+            "paneId":    "main",
+            "locked":    True,
+            "visible":   True,
+            "completed": True,
+            "selected":  False,
+            "origin":    "server",          # marks it read-only in the UI
+            "positionData": {               # only for long/shortPosition
+                "entryPrice": 42000.0,
+                "stopLoss":   41500.0,
+                "takeProfit": 43000.0,
+                "quantity":   100.0,
+                "risk":       1.19,
+                "reward":     2.38,
+            },
+        }
+
+    Safe to call when no clients are connected — the message is silently
+    dropped. Safe to call before ``trex.init()`` — also silently dropped.
+    """
+    from trex.engine.auto import _engine
+    if _engine is None:
+        return
+    _engine._server.broadcast({"type": "drawing_upsert", "drawing": drawing})
+
+
+def delete_drawing(drawing_id: str) -> None:
+    """
+    Remove a previously broadcast drawing from all connected clients.
+
+    Parameters
+    ----------
+    drawing_id:
+        The same ``id`` string that was used in ``broadcast_drawing()``.
+    """
+    from trex.engine.auto import _engine
+    if _engine is None:
+        return
+    _engine._server.broadcast({"type": "drawing_delete", "drawingId": drawing_id})
+
+
 # ── Re-exports ────────────────────────────────────────────────────────────────
 
 from typing import TYPE_CHECKING
