@@ -722,6 +722,272 @@ def force_index(symbol: str, timeframe: str, period: int = 13,
     return _register(ForceIndex, symbol, timeframe, listener, _ctx, period=period, visible=visible)
 
 
+# ── Volume ────────────────────────────────────────────────────────────────────
+
+def ad(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.ad import AD
+    return _register(AD, symbol, timeframe, listener, _ctx, visible=visible)
+
+def adosc(symbol: str, timeframe: str, fast_period: int = 3, slow_period: int = 10,
+          listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.adosc import ADOSC
+    return _register(ADOSC, symbol, timeframe, listener, _ctx,
+                     fast_period=fast_period, slow_period=slow_period, visible=visible)
+
+def cmf(symbol: str, timeframe: str, period: int = 20,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.cmf import CMF
+    return _register(CMF, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+def eom(symbol: str, timeframe: str, period: int = 14, divisor: float = 10000.0,
+        listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.eom import EOM
+    return _register(EOM, symbol, timeframe, listener, _ctx,
+                     period=period, divisor=divisor, visible=visible)
+
+def nvi(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.nvi import NVI
+    return _register(NVI, symbol, timeframe, listener, _ctx, visible=visible)
+
+def pvi(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.pvi import PVI
+    return _register(PVI, symbol, timeframe, listener, _ctx, visible=visible)
+
+def pvt(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.pvt import PVT
+    return _register(PVT, symbol, timeframe, listener, _ctx, visible=visible)
+
+def vo(symbol: str, timeframe: str, fast_period: int = 5, slow_period: int = 10,
+       listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.vo import VO
+    return _register(VO, symbol, timeframe, listener, _ctx,
+                     fast_period=fast_period, slow_period=slow_period, visible=visible)
+
+def vroc(symbol: str, timeframe: str, period: int = 14,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volume.vroc import VROC
+    return _register(VROC, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+
+# ── Statistics ────────────────────────────────────────────────────────────────
+
+def zscore(symbol: str, timeframe: str, period: int = 20,
+           value_extractor=None, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.statistics.zscore import ZScore
+    from trex.base.ohlcv import ValueExtractor
+    ve = value_extractor or ValueExtractor.extract_close
+    return _register(ZScore, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=ve, visible=visible)
+
+def variance(symbol: str, timeframe: str, period: int = 20,
+             value_extractor=None, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.statistics.variance import Variance
+    from trex.base.ohlcv import ValueExtractor
+    ve = value_extractor or ValueExtractor.extract_close
+    return _register(Variance, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=ve, visible=visible)
+
+def linreg_slope(symbol: str, timeframe: str, period: int = 14,
+                 value_extractor=None, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.statistics.linreg_slope import LinRegSlope
+    from trex.base.ohlcv import ValueExtractor
+    ve = value_extractor or ValueExtractor.extract_close
+    return _register(LinRegSlope, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=ve, visible=visible)
+
+def correl(symbol: str, timeframe: str, period: int = 20,
+           listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.statistics.correl import Correl
+    return _register(Correl, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+def percentrank(symbol: str, timeframe: str, period: int = 20,
+                value_extractor=None, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.statistics.percentrank import PercentRank
+    from trex.base.ohlcv import ValueExtractor
+    ve = value_extractor or ValueExtractor.extract_close
+    return _register(PercentRank, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=ve, visible=visible)
+
+
+# ── Volatility (extra) ────────────────────────────────────────────────────────
+
+def natr(symbol: str, timeframe: str, period: int = 14,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volatility.natr import NATR
+    return _register(NATR, symbol, timeframe, listener, _ctx, period=period, visible=visible)
+
+def ui(symbol: str, timeframe: str, period: int = 14,
+       value_extractor=None, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volatility.ui import UI
+    from trex.base.ohlcv import ValueExtractor
+    ve = value_extractor or ValueExtractor.extract_close
+    return _register(UI, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=ve, visible=visible)
+
+def hv(symbol: str, timeframe: str, period: int = 20,
+       value_extractor=None, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volatility.hv import HV
+    from trex.base.ohlcv import ValueExtractor
+    ve = value_extractor or ValueExtractor.extract_close
+    return _register(HV, symbol, timeframe, listener, _ctx,
+                     period=period, value_extractor=ve, visible=visible)
+
+def chandelier(symbol: str, timeframe: str, period: int = 22, multiplier: float = 3.0,
+               listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.volatility.chandelier import Chandelier
+    return _register(Chandelier, symbol, timeframe, listener, _ctx,
+                     period=period, multiplier=multiplier, visible=visible)
+
+
+# ── Candlestick Patterns ──────────────────────────────────────────────────────
+
+def doji(symbol: str, timeframe: str, threshold: float = 0.1,
+         listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import Doji
+    return _register(Doji, symbol, timeframe, listener, _ctx, threshold=threshold, visible=visible)
+
+def dragonfly_doji(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import DragonFlyDoji
+    return _register(DragonFlyDoji, symbol, timeframe, listener, _ctx, visible=visible)
+
+def gravestone_doji(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import GravestoneDoji
+    return _register(GravestoneDoji, symbol, timeframe, listener, _ctx, visible=visible)
+
+def hammer(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import Hammer
+    return _register(Hammer, symbol, timeframe, listener, _ctx, visible=visible)
+
+def inverted_hammer(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import InvertedHammer
+    return _register(InvertedHammer, symbol, timeframe, listener, _ctx, visible=visible)
+
+def hanging_man(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import HangingMan
+    return _register(HangingMan, symbol, timeframe, listener, _ctx, visible=visible)
+
+def shooting_star(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import ShootingStar
+    return _register(ShootingStar, symbol, timeframe, listener, _ctx, visible=visible)
+
+def marubozu(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import Marubozu
+    return _register(Marubozu, symbol, timeframe, listener, _ctx, visible=visible)
+
+def spinning_top(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import SpinningTop
+    return _register(SpinningTop, symbol, timeframe, listener, _ctx, visible=visible)
+
+def long_legged_doji(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import LongLeggedDoji
+    return _register(LongLeggedDoji, symbol, timeframe, listener, _ctx, visible=visible)
+
+def bullish_belt(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import BullishBelt
+    return _register(BullishBelt, symbol, timeframe, listener, _ctx, visible=visible)
+
+def bearish_belt(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import BearishBelt
+    return _register(BearishBelt, symbol, timeframe, listener, _ctx, visible=visible)
+
+def high_wave(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import HighWave
+    return _register(HighWave, symbol, timeframe, listener, _ctx, visible=visible)
+
+def rickshaw_man(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import RickshawMan
+    return _register(RickshawMan, symbol, timeframe, listener, _ctx, visible=visible)
+
+def umbrella_line(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.single import UmbrellaLine
+    return _register(UmbrellaLine, symbol, timeframe, listener, _ctx, visible=visible)
+
+def bullish_engulfing(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import BullishEngulfing
+    return _register(BullishEngulfing, symbol, timeframe, listener, _ctx, visible=visible)
+
+def bearish_engulfing(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import BearishEngulfing
+    return _register(BearishEngulfing, symbol, timeframe, listener, _ctx, visible=visible)
+
+def bullish_harami(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import BullishHarami
+    return _register(BullishHarami, symbol, timeframe, listener, _ctx, visible=visible)
+
+def bearish_harami(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import BearishHarami
+    return _register(BearishHarami, symbol, timeframe, listener, _ctx, visible=visible)
+
+def piercing(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import Piercing
+    return _register(Piercing, symbol, timeframe, listener, _ctx, visible=visible)
+
+def dark_cloud_cover(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import DarkCloudCover
+    return _register(DarkCloudCover, symbol, timeframe, listener, _ctx, visible=visible)
+
+def tweezer(symbol: str, timeframe: str, tolerance: float = 0.001,
+            listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import Tweezer
+    return _register(Tweezer, symbol, timeframe, listener, _ctx, tolerance=tolerance, visible=visible)
+
+def kicking(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import Kicking
+    return _register(Kicking, symbol, timeframe, listener, _ctx, visible=visible)
+
+def on_neck(symbol: str, timeframe: str, tolerance: float = 0.002,
+            listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import OnNeck
+    return _register(OnNeck, symbol, timeframe, listener, _ctx, tolerance=tolerance, visible=visible)
+
+def matching_low(symbol: str, timeframe: str, tolerance: float = 0.001,
+                 listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.two_candle import MatchingLow
+    return _register(MatchingLow, symbol, timeframe, listener, _ctx, tolerance=tolerance, visible=visible)
+
+def morning_star(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import MorningStar
+    return _register(MorningStar, symbol, timeframe, listener, _ctx, visible=visible)
+
+def evening_star(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import EveningStar
+    return _register(EveningStar, symbol, timeframe, listener, _ctx, visible=visible)
+
+def morning_doji_star(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import MorningDojiStar
+    return _register(MorningDojiStar, symbol, timeframe, listener, _ctx, visible=visible)
+
+def evening_doji_star(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import EveningDojiStar
+    return _register(EveningDojiStar, symbol, timeframe, listener, _ctx, visible=visible)
+
+def three_white_soldiers(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import ThreeWhiteSoldiers
+    return _register(ThreeWhiteSoldiers, symbol, timeframe, listener, _ctx, visible=visible)
+
+def three_black_crows(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import ThreeBlackCrows
+    return _register(ThreeBlackCrows, symbol, timeframe, listener, _ctx, visible=visible)
+
+def three_inside_up(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import ThreeInsideUp
+    return _register(ThreeInsideUp, symbol, timeframe, listener, _ctx, visible=visible)
+
+def three_inside_down(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import ThreeInsideDown
+    return _register(ThreeInsideDown, symbol, timeframe, listener, _ctx, visible=visible)
+
+def deliberation(symbol: str, timeframe: str, listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import Deliberation
+    return _register(Deliberation, symbol, timeframe, listener, _ctx, visible=visible)
+
+def identical_three_crows(symbol: str, timeframe: str, tolerance: float = 0.002,
+                          listener=None, *, visible: bool = False, _ctx=None) -> ListenerKey:
+    from trex.indic.pattern.three_candle import IdenticalThreeCrows
+    return _register(IdenticalThreeCrows, symbol, timeframe, listener, _ctx,
+                     tolerance=tolerance, visible=visible)
+
+
 # ── Hybrid / compound ─────────────────────────────────────────────────────────
 
 def vwap(
@@ -898,6 +1164,26 @@ api = type("api", (), {
         "rvi": rvi, "fisher": fisher, "vortex": vortex,
         "ppo": ppo, "apo": apo, "stochrsi": stochrsi, "uo": uo, "chop": chop,
         "force_index": force_index,
+        "ad": ad, "adosc": adosc, "cmf": cmf, "eom": eom, "nvi": nvi,
+        "pvi": pvi, "pvt": pvt, "vo": vo, "vroc": vroc,
+        "zscore": zscore, "variance": variance, "linreg_slope": linreg_slope,
+        "correl": correl, "percentrank": percentrank,
+        "natr": natr, "ui": ui, "hv": hv, "chandelier": chandelier,
+        "doji": doji, "dragonfly_doji": dragonfly_doji, "gravestone_doji": gravestone_doji,
+        "hammer": hammer, "inverted_hammer": inverted_hammer, "hanging_man": hanging_man,
+        "shooting_star": shooting_star, "marubozu": marubozu, "spinning_top": spinning_top,
+        "long_legged_doji": long_legged_doji, "bullish_belt": bullish_belt,
+        "bearish_belt": bearish_belt, "high_wave": high_wave, "rickshaw_man": rickshaw_man,
+        "umbrella_line": umbrella_line,
+        "bullish_engulfing": bullish_engulfing, "bearish_engulfing": bearish_engulfing,
+        "bullish_harami": bullish_harami, "bearish_harami": bearish_harami,
+        "piercing": piercing, "dark_cloud_cover": dark_cloud_cover, "tweezer": tweezer,
+        "kicking": kicking, "on_neck": on_neck, "matching_low": matching_low,
+        "morning_star": morning_star, "evening_star": evening_star,
+        "morning_doji_star": morning_doji_star, "evening_doji_star": evening_doji_star,
+        "three_white_soldiers": three_white_soldiers, "three_black_crows": three_black_crows,
+        "three_inside_up": three_inside_up, "three_inside_down": three_inside_down,
+        "deliberation": deliberation, "identical_three_crows": identical_three_crows,
         "vwap": vwap, "supertrend": supertrend, "ichimoku": ichimoku,
         "psar": psar, "zigzag_base": zigzag_base,
         "de_attach_by_key": de_attach_by_key,
