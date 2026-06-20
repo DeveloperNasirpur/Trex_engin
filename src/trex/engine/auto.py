@@ -363,9 +363,9 @@ class AutoEngine:
             except Exception:
                 log.exception("seed: could not load state for %s", ikey)
 
-        # Determine whether we can use fast-path (all states available)
-        all_have_state = len(states) == len(indicators) and all(
-            states.get(ind.indicator_key()) for ind in indicators
+        # Determine whether we can use fast-path (every indicator has a saved state)
+        all_have_state = len(states) > 0 and all(
+            ind.indicator_key() in states for ind in indicators
         )
         if all_have_state:
             min_last_time = min(

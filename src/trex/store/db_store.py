@@ -900,18 +900,22 @@ class TrexStore(_SqlMixin):
         bars: list[Bar] = []
         with self._connection() as conn, conn.cursor() as cur:
             cur.execute(sql, params)
-            for row in cur.fetchall():
-                try:
-                    bars.append(Bar(
-                        time=int(row[0]),
-                        open=float(row[1] or 0),
-                        high=float(row[2] or 0),
-                        low=float(row[3] or 0),
-                        close=float(row[4] or 0),
-                        volume=float(row[5] or 0),
-                    ))
-                except (ValueError, TypeError):
-                    _LOG.warning("fetch_bars: skipping malformed row time=%s", row[0])
+            while True:
+                rows = cur.fetchmany(10_000)
+                if not rows:
+                    break
+                for row in rows:
+                    try:
+                        bars.append(Bar(
+                            time=int(row[0]),
+                            open=float(row[1] or 0),
+                            high=float(row[2] or 0),
+                            low=float(row[3] or 0),
+                            close=float(row[4] or 0),
+                            volume=float(row[5] or 0),
+                        ))
+                    except (ValueError, TypeError):
+                        _LOG.warning("fetch_bars: skipping malformed row time=%s", row[0])
         return bars
 
     def bulk_update_indicators(

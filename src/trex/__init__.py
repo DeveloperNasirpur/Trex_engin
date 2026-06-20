@@ -118,6 +118,14 @@ def init(
     from trex.engine.auto import AutoEngine
     import trex.engine.auto as _auto_mod
 
+    # Stop any previously running engine (guard against double init())
+    if _auto_mod._engine is not None:
+        try:
+            _auto_mod._engine.stop()
+        except Exception:
+            pass
+        _auto_mod._engine = None
+
     engine = AutoEngine(
         port             = port,
         host             = host,
