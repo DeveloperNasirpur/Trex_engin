@@ -732,12 +732,14 @@ listeners[] + WebSocket broadcast
 | Chart type (`chartType`) | ✅ Full | State tracked per session |
 | Ping / Pong | ✅ Full | RTT echo |
 | `toast` notifications | ✅ Full | Via server broadcast |
-| `get_symbols` → `symbols_list` | ⚠️ Partial | Requires custom hook implementation |
-| `get_indicators` → `indicators_list` | ⚠️ Partial | Requires custom hook implementation |
-| Multi-chart (`layout`, `chart_*`) | ⚠️ Partial | Secondary charts need custom wiring |
-| Drawing sync (`drawing_*`) | ⚠️ Partial | Server-push only; events not persisted |
+| `get_symbols` → `symbols_list` | ✅ Full | AutoEngine replies with all known symbols from memory + DB |
+| `get_indicators` → `indicators_list` | ✅ Full | AutoEngine replies with all registered SeriesDefinitions |
+| Multi-chart (`layout`, `chart_symbol`) | ✅ Full | AutoEngine sends `chart_snapshot` for each secondary chart |
+| Secondary chart history | ✅ Full | `history` with `chartId` → `chart_history` response |
+| Secondary chart live bars | ✅ Full | `push_chart_bar()` available on session |
+| Drawing sync (`drawing_*`) | ⚠️ Partial | Client drawing events forwarded; persistence is app responsibility |
 
-> **⚠️ Partial** means the engine won't crash on these messages, but the feature needs additional application-level code to fully implement.
+> **⚠️ Partial (drawings):** The engine forwards `drawing_upsert`/`drawing_delete`/`drawings_clear` events from the client to your callback hooks. Persisting drawings to DB and restoring them on snapshot requires application-level code.
 
 ### Verified Working Flow
 

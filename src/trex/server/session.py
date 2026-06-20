@@ -100,6 +100,38 @@ class OnDrawingsClearCB(Protocol):
 
 
 @runtime_checkable
+class OnGetSymbolsCB(Protocol):
+    async def __call__(self, session: "TrexSession") -> None: ...
+
+
+@runtime_checkable
+class OnGetIndicatorsCB(Protocol):
+    async def __call__(self, session: "TrexSession") -> None: ...
+
+
+@runtime_checkable
+class OnLayoutCB(Protocol):
+    async def __call__(
+        self, session: "TrexSession", layout: str, charts: list[dict[str, Any]]
+    ) -> None: ...
+
+
+@runtime_checkable
+class OnChartSymbolCB(Protocol):
+    async def __call__(
+        self, session: "TrexSession", chart_id: str, symbol: str,
+        timeframe: str | None, indicators: list[str],
+    ) -> None: ...
+
+
+@runtime_checkable
+class OnChartHistoryCB(Protocol):
+    async def __call__(
+        self, session: "TrexSession", chart_id: str, before: int, count: int
+    ) -> None: ...
+
+
+@runtime_checkable
 class OnMessageCB(Protocol):
     async def __call__(self, session: "TrexSession", msg: dict[str, Any]) -> None: ...
 
@@ -164,6 +196,13 @@ class TrexSession:
         "_on_drawing_delete",
         "_on_drawings_clear",
         "_on_message",
+        "_on_get_symbols",
+        "_on_get_indicators",
+        "_on_layout",
+        "_on_chart_symbol",
+        "_on_chart_history",
+        # per-session secondary chart state: {chartId: {symbol, timeframe}}
+        "_charts",
     )
 
     def __init__(self, ws: "ServerConnection") -> None:
@@ -188,10 +227,17 @@ class TrexSession:
         self._on_symbol:         OnSymbolCB | None         = None
         self._on_timeframe:      OnTimeframeCB | None      = None
         self._on_chart_type:     OnChartTypeCB | None      = None
-        self._on_drawing_upsert: OnDrawingUpsertCB | None  = None
-        self._on_drawing_delete: OnDrawingDeleteCB | None  = None
-        self._on_drawings_clear: OnDrawingsClearCB | None  = None
-        self._on_message:        OnMessageCB | None        = None
+        self._on_drawing_upsert:  OnDrawingUpsertCB | None   = None
+        self._on_drawing_delete:  OnDrawingDeleteCB | None   = None
+        self._on_drawings_clear:  OnDrawingsClearCB | None   = None
+        self._on_message:         OnMessageCB | None         = None
+        self._on_get_symbols:     OnGetSymbolsCB | None      = None
+        self._on_get_indicators:  OnGetIndicatorsCB | None   = None
+        self._on_layout:          OnLayoutCB | None          = None
+        self._on_chart_symbol:    OnChartSymbolCB | None     = None
+        self._on_chart_history:   OnChartHistoryCB | None    = None
+        # secondary chart state: {chartId: {"symbol": str, "timeframe": str}}
+        self._charts: dict[str, dict[str, str]] = {}
 
     # ── Internal send ─────────────────────────────────────────────────────────
 
@@ -242,9 +288,12 @@ class TrexSession:
                     await self._on_chart_type(self, ct)  # type: ignore[arg-type]
 
             elif t == "history":
-                if self._on_history:
-                    before = int(msg.get("before", 0))
-                    count  = int(msg.get("count", 300))
+                before = int(msg.get("before", 0))
+                count  = int(msg.get("count", 300))
+                chart_id = msg.get("chartId")
+                if chart_id and self._on_chart_history:
+                    await self._on_chart_history(self, str(chart_id), before, count)  # type: ignore[arg-type]
+                elif self._on_history:
                     await self._on_history(self, before, count)
 
             elif t == "drawing_upsert":
@@ -270,6 +319,41 @@ class TrexSession:
                 if self._on_drawing_upsert:
                     for d in msg.get("drawings", []):
                         await self._on_drawing_upsert(self, d)  # type: ignore[arg-type]
+
+            elif t == "get_symbols":
+                if self._on_get_symbols:
+                    await self._on_get_symbols(self)
+
+            elif t == "get_indicators":
+                if self._on_get_indicators:
+                    await self._on_get_indicators(self)
+
+            elif t == "layout":
+                charts = msg.get("charts", [])
+                layout = str(msg.get("layout", "single"))
+                # Update secondary chart state from layout
+                for c in charts:
+                    cid = c.get("chartId", "")
+                    if cid and cid != "main":
+                        self._charts[cid] = {
+                            "symbol":    str(c.get("symbol", "")),
+                            "timeframe": str(c.get("timeframe", self.timeframe or "")),
+                        }
+                if self._on_layout:
+                    await self._on_layout(self, layout, charts)  # type: ignore[arg-type]
+
+            elif t == "chart_symbol":
+                chart_id = str(msg.get("chartId", ""))
+                symbol   = str(msg.get("symbol", ""))
+                tf       = msg.get("timeframe") or None
+                inds     = list(msg.get("indicators", []))
+                if chart_id:
+                    self._charts[chart_id] = {
+                        "symbol":    symbol,
+                        "timeframe": tf or (self.timeframe or ""),
+                    }
+                if self._on_chart_symbol and chart_id and symbol:
+                    await self._on_chart_symbol(self, chart_id, symbol, tf, inds)  # type: ignore[arg-type]
 
         except Exception:
             log.exception("[%s] dispatch error (type=%s)", self.id[:8], t)
@@ -415,6 +499,69 @@ class TrexSession:
     async def clear_drawings(self) -> bool:
         """Remove all server-side drawings."""
         return await self._send({"type": "drawings_clear"})
+
+    # ── Symbol / Indicator lists ───────────────────────────────────────────────
+
+    async def send_symbols_list(
+        self, symbols: list[dict[str, Any]]
+    ) -> bool:
+        """Reply to get_symbols. Each entry: {symbol, name?, type?}."""
+        return await self._send({"type": "symbols_list", "symbols": symbols})
+
+    async def send_indicators_list(self, defs: list[SeriesDef]) -> bool:
+        """Reply to get_indicators with all streamable SeriesDefinitions."""
+        return await self._send({
+            "type":       "indicators_list",
+            "indicators": [d.to_wire() for d in defs],
+        })
+
+    # ── Multi-chart (secondary charts) ────────────────────────────────────────
+
+    async def chart_snapshot(
+        self,
+        chart_id:    str,
+        bars:        list[Bar],
+        *,
+        symbol:      str | None                    = None,
+        timeframe:   str | None                    = None,
+        digits:      int                           = 2,
+        definitions: list[SeriesDef] | None        = None,
+        indicators:  dict[str, list[Point]] | None = None,
+    ) -> bool:
+        """Send a snapshot for a secondary chart."""
+        msg: dict[str, Any] = {
+            "type":    "chart_snapshot",
+            "chartId": chart_id,
+            "data":    [b.to_wire() for b in bars],
+            "digits":  digits,
+        }
+        if symbol:      msg["symbol"]      = symbol
+        if timeframe:   msg["timeframe"]   = timeframe
+        if definitions: msg["definitions"] = [d.to_wire() for d in definitions]
+        if indicators:
+            msg["points"] = {
+                k: [p.to_wire() for p in v] for k, v in indicators.items()
+            }
+        return await self._send(msg)
+
+    async def push_chart_bar(self, chart_id: str, bar: Bar) -> bool:
+        """Push a live bar update for a secondary chart."""
+        return await self._send({
+            "type":    "chart_bar",
+            "chartId": chart_id,
+            "bar":     bar.to_wire(),
+        })
+
+    async def push_chart_history(
+        self, chart_id: str, bars: list[Bar], *, no_more: bool = False
+    ) -> bool:
+        """Reply to a secondary-chart history request."""
+        return await self._send({
+            "type":          "chart_history",
+            "chartId":       chart_id,
+            "data":          [b.to_wire() for b in bars],
+            "noMoreHistory": no_more or len(bars) == 0,
+        })
 
     # ── Chart control ─────────────────────────────────────────────────────────
 

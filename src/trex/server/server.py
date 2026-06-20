@@ -47,6 +47,8 @@ from trex.server.session import (
     OnHistoryCB,
     OnDrawingUpsertCB, OnDrawingDeleteCB, OnDrawingsClearCB,
     OnMessageCB,
+    OnGetSymbolsCB, OnGetIndicatorsCB,
+    OnLayoutCB, OnChartSymbolCB, OnChartHistoryCB,
 )
 from trex.domain.types import Bar, Point, SeriesDef, Drawing, ToastKind
 
@@ -101,10 +103,15 @@ class TrexServer:
         self._on_timeframe:      OnTimeframeCB | None      = None
         self._on_chart_type:     OnChartTypeCB | None      = None
         self._on_history:        OnHistoryCB | None        = None
-        self._on_drawing_upsert: OnDrawingUpsertCB | None  = None
-        self._on_drawing_delete: OnDrawingDeleteCB | None  = None
-        self._on_drawings_clear: OnDrawingsClearCB | None  = None
-        self._on_message:        OnMessageCB | None        = None
+        self._on_drawing_upsert:  OnDrawingUpsertCB | None   = None
+        self._on_drawing_delete:  OnDrawingDeleteCB | None   = None
+        self._on_drawings_clear:  OnDrawingsClearCB | None   = None
+        self._on_message:         OnMessageCB | None         = None
+        self._on_get_symbols:     OnGetSymbolsCB | None      = None
+        self._on_get_indicators:  OnGetIndicatorsCB | None   = None
+        self._on_layout:          OnLayoutCB | None          = None
+        self._on_chart_symbol:    OnChartSymbolCB | None     = None
+        self._on_chart_history:   OnChartHistoryCB | None    = None
 
     # ── Decorator API ─────────────────────────────────────────────────────────
 
@@ -176,6 +183,31 @@ class TrexServer:
     def on_message(self, fn: OnMessageCB) -> OnMessageCB:
         """Called for every incoming message (after built-in handlers)."""
         self._on_message = fn
+        return fn
+
+    def on_get_symbols(self, fn: OnGetSymbolsCB) -> OnGetSymbolsCB:
+        """Called when client sends get_symbols. Reply with session.send_symbols_list()."""
+        self._on_get_symbols = fn
+        return fn
+
+    def on_get_indicators(self, fn: OnGetIndicatorsCB) -> OnGetIndicatorsCB:
+        """Called when client sends get_indicators. Reply with session.send_indicators_list()."""
+        self._on_get_indicators = fn
+        return fn
+
+    def on_layout(self, fn: OnLayoutCB) -> OnLayoutCB:
+        """Called when client sends a layout change. Signature: (session, layout, charts)."""
+        self._on_layout = fn
+        return fn
+
+    def on_chart_symbol(self, fn: OnChartSymbolCB) -> OnChartSymbolCB:
+        """Called when a secondary chart requests a new symbol. Signature: (session, chart_id, symbol, timeframe, indicators)."""
+        self._on_chart_symbol = fn
+        return fn
+
+    def on_chart_history(self, fn: OnChartHistoryCB) -> OnChartHistoryCB:
+        """Called when a secondary chart needs history. Reply with session.push_chart_history()."""
+        self._on_chart_history = fn
         return fn
 
     # ── Session registry ──────────────────────────────────────────────────────
@@ -304,10 +336,15 @@ class TrexServer:
         session._on_symbol         = self._on_symbol
         session._on_timeframe      = self._on_timeframe
         session._on_chart_type     = self._on_chart_type
-        session._on_drawing_upsert = self._on_drawing_upsert
-        session._on_drawing_delete = self._on_drawing_delete
-        session._on_drawings_clear = self._on_drawings_clear
-        session._on_message        = self._on_message
+        session._on_drawing_upsert  = self._on_drawing_upsert
+        session._on_drawing_delete  = self._on_drawing_delete
+        session._on_drawings_clear  = self._on_drawings_clear
+        session._on_message         = self._on_message
+        session._on_get_symbols     = self._on_get_symbols
+        session._on_get_indicators  = self._on_get_indicators
+        session._on_layout          = self._on_layout
+        session._on_chart_symbol    = self._on_chart_symbol
+        session._on_chart_history   = self._on_chart_history
 
         log.info("connect  %-21s [%s]", session.remote, session.id[:8])
 

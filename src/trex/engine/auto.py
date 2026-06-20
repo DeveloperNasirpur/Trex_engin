@@ -94,10 +94,15 @@ class AutoEngine:
             log.info("AutoEngine: DB connected (exchange=%s)", exchange)
 
         # Wire server hooks before start()
-        self._server._on_connect   = self._on_connect
-        self._server._on_history   = self._on_history
-        self._server._on_symbol    = self._on_symbol
-        self._server._on_timeframe = self._on_timeframe
+        self._server._on_connect        = self._on_connect
+        self._server._on_history        = self._on_history
+        self._server._on_symbol         = self._on_symbol
+        self._server._on_timeframe      = self._on_timeframe
+        self._server._on_get_symbols    = self._on_get_symbols
+        self._server._on_get_indicators = self._on_get_indicators
+        self._server._on_layout         = self._on_layout
+        self._server._on_chart_symbol   = self._on_chart_symbol
+        self._server._on_chart_history  = self._on_chart_history
 
     # ── Server event handlers ─────────────────────────────────────────────────
 
@@ -120,6 +125,81 @@ class AutoEngine:
     def _on_timeframe(self, session: Any, tf: str) -> None:
         sym = (session.symbol or "").upper()
         self._send_snapshot(session, sym, tf)
+
+    def _on_get_symbols(self, session: Any) -> None:
+        """Reply to get_symbols with all known (symbol, tf) pairs from memory or DB."""
+        seen: set[str] = set()
+        symbols: list[dict] = []
+        # From in-memory store
+        for sym, _tf in self._store.symbols:
+            if sym not in seen:
+                seen.add(sym)
+                symbols.append({"symbol": sym})
+        # Supplement from DB if available
+        if self._db is not None:
+            try:
+                for sym in self._db.get_tables(self._exchange):
+                    # table names are like BTCUSDT_1m → strip suffix
+                    base = sym.split("_")[0].upper()
+                    if base and base not in seen:
+                        seen.add(base)
+                        symbols.append({"symbol": base})
+            except Exception:
+                pass
+        session.send_symbols_list(symbols)
+
+    def _on_get_indicators(self, session: Any) -> None:
+        """Reply to get_indicators with all registered SeriesDefinitions."""
+        with self._def_lock:
+            defs = list(self._definitions)
+        session.send_indicators_list(defs)
+
+    def _on_layout(self, session: Any, layout: str, charts: list) -> None:
+        """Send chart_snapshot for every secondary chart in the layout."""
+        for chart in charts:
+            chart_id = chart.get("chartId", "")
+            if not chart_id or chart_id == "main":
+                continue
+            sym = str(chart.get("symbol", "")).upper()
+            tf  = str(chart.get("timeframe", self._source_tf))
+            if sym:
+                self._send_chart_snapshot(session, chart_id, sym, tf)
+
+    def _on_chart_symbol(
+        self, session: Any, chart_id: str, symbol: str,
+        timeframe: str | None, indicators: list,
+    ) -> None:
+        """Send chart_snapshot when secondary chart changes symbol."""
+        sym = symbol.upper()
+        tf  = timeframe or (session.timeframe or self._source_tf)
+        self._send_chart_snapshot(session, chart_id, sym, tf)
+
+    def _on_chart_history(
+        self, session: Any, chart_id: str, before: int, count: int
+    ) -> None:
+        """Reply to secondary-chart history request."""
+        chart_state = session._charts.get(chart_id, {})
+        sym = chart_state.get("symbol", "").upper()
+        tf  = chart_state.get("timeframe", self._source_tf)
+        if sym:
+            page = self._store.history_page(sym, tf, before=before, count=count)
+            session.push_chart_history(chart_id, page, no_more=len(page) == 0)
+
+    def _send_chart_snapshot(
+        self, session: Any, chart_id: str, symbol: str, tf: str
+    ) -> None:
+        store = self._store.get_store(symbol, tf)
+        bars  = store.recent(self._snapshot_sz)
+        defs  = list(self._definitions) or None
+        cache = dict(store.indicator_cache) or None
+        session.chart_snapshot(
+            chart_id,
+            bars,
+            symbol      = symbol or None,
+            timeframe   = tf,
+            definitions = defs,
+            indicators  = cache,
+        )
 
     def _send_snapshot(self, session: Any, symbol: str, tf: str) -> None:
         store = self._store.get_store(symbol, tf)

@@ -200,6 +200,45 @@ class SyncSession:
     def alert(self, msg: str) -> bool:
         return self._run(self._session.alert(msg))
 
+    # ── Symbol / Indicator lists ───────────────────────────────────────────────
+
+    def send_symbols_list(self, symbols: list[dict]) -> bool:
+        return self._run(self._session.send_symbols_list(symbols))
+
+    def send_indicators_list(self, defs: list[SeriesDef]) -> bool:
+        return self._run(self._session.send_indicators_list(defs))
+
+    # ── Multi-chart ───────────────────────────────────────────────────────────
+
+    @property
+    def charts(self) -> dict:
+        """Secondary chart state: {chartId: {symbol, timeframe}}."""
+        return self._session._charts
+
+    def chart_snapshot(
+        self,
+        chart_id:    str,
+        bars:        list[Bar],
+        *,
+        symbol:      str | None                    = None,
+        timeframe:   str | None                    = None,
+        digits:      int                           = 2,
+        definitions: list[SeriesDef] | None        = None,
+        indicators:  dict[str, list[Point]] | None = None,
+    ) -> bool:
+        return self._run(self._session.chart_snapshot(
+            chart_id, bars, symbol=symbol, timeframe=timeframe,
+            digits=digits, definitions=definitions, indicators=indicators,
+        ))
+
+    def push_chart_bar(self, chart_id: str, bar: Bar) -> bool:
+        return self._run(self._session.push_chart_bar(chart_id, bar))
+
+    def push_chart_history(
+        self, chart_id: str, bars: list[Bar], *, no_more: bool = False
+    ) -> bool:
+        return self._run(self._session.push_chart_history(chart_id, bars, no_more=no_more))
+
     def __repr__(self) -> str:
         return f"SyncSession({self._session!r})"
 
@@ -253,10 +292,15 @@ class SyncServer:
         self._on_timeframe:      Callable[[SyncSession, str], None] | None = None
         self._on_chart_type:     Callable[[SyncSession, str], None] | None = None
         self._on_history:        Callable[[SyncSession, int, int], None] | None = None
-        self._on_drawing_upsert: Callable[[SyncSession, dict[str, Any]], None] | None = None
-        self._on_drawing_delete: Callable[[SyncSession, list[str]], None] | None = None
-        self._on_drawings_clear: Callable[[SyncSession], None] | None = None
-        self._on_message:        Callable[[SyncSession, dict[str, Any]], None] | None = None
+        self._on_drawing_upsert:  Callable[[SyncSession, dict[str, Any]], None] | None = None
+        self._on_drawing_delete:  Callable[[SyncSession, list[str]], None] | None = None
+        self._on_drawings_clear:  Callable[[SyncSession], None] | None = None
+        self._on_message:         Callable[[SyncSession, dict[str, Any]], None] | None = None
+        self._on_get_symbols:     Callable[[SyncSession], None] | None = None
+        self._on_get_indicators:  Callable[[SyncSession], None] | None = None
+        self._on_layout:          Callable[[SyncSession, str, list], None] | None = None
+        self._on_chart_symbol:    Callable[[SyncSession, str, str, str | None, list], None] | None = None
+        self._on_chart_history:   Callable[[SyncSession, str, int, int], None] | None = None
 
     # ── Decorators ────────────────────────────────────────────────────────────
 
@@ -290,6 +334,21 @@ class SyncServer:
 
     def on_drawings_clear(self, fn: Callable[[SyncSession], None]) -> Callable[[SyncSession], None]:
         self._on_drawings_clear = fn;  return fn
+
+    def on_get_symbols(self, fn: Callable[["SyncSession"], None]) -> Callable[["SyncSession"], None]:
+        self._on_get_symbols = fn;  return fn
+
+    def on_get_indicators(self, fn: Callable[["SyncSession"], None]) -> Callable[["SyncSession"], None]:
+        self._on_get_indicators = fn;  return fn
+
+    def on_layout(self, fn: Callable[["SyncSession", str, list], None]) -> Callable[["SyncSession", str, list], None]:
+        self._on_layout = fn;  return fn
+
+    def on_chart_symbol(self, fn: Callable) -> Callable:
+        self._on_chart_symbol = fn;  return fn
+
+    def on_chart_history(self, fn: Callable) -> Callable:
+        self._on_chart_history = fn;  return fn
 
     def on_message(self, fn: Callable[[SyncSession, dict[str, Any]], None]) -> Callable[[SyncSession, dict[str, Any]], None]:
         self._on_message = fn;  return fn
@@ -424,16 +483,35 @@ class SyncServer:
             srv = TrexServer(
                 host=self._host, port=self._port, max_clients=self._max
             )
-            srv._on_connect        = _make_hook_0(self._on_connect)   # type: ignore[assignment]
-            srv._on_disconnect     = _make_hook_0(self._on_disconnect)  # type: ignore[assignment]
-            srv._on_symbol         = _make_hook_1(self._on_symbol)   # type: ignore[assignment]
-            srv._on_timeframe      = _make_hook_1(self._on_timeframe)  # type: ignore[assignment]
-            srv._on_chart_type     = _make_hook_1(self._on_chart_type)  # type: ignore[assignment]
-            srv._on_history        = _make_hook_2(self._on_history)   # type: ignore[assignment]
-            srv._on_drawing_upsert = _make_hook_1(self._on_drawing_upsert)  # type: ignore[assignment]
-            srv._on_drawing_delete = _make_hook_1(self._on_drawing_delete)  # type: ignore[assignment]
-            srv._on_drawings_clear = _make_hook_0(self._on_drawings_clear)  # type: ignore[assignment]
-            srv._on_message        = _make_hook_2(self._on_message)   # type: ignore[assignment]
+            def _make_hook_3(cb):
+                if cb is None:
+                    return None
+                async def hook(s: TrexSession, a: Any, b: Any, c: Any) -> None:
+                    await loop.run_in_executor(ex, cb, _wrap(s), a, b, c)
+                return hook
+
+            def _make_hook_4(cb):
+                if cb is None:
+                    return None
+                async def hook(s: TrexSession, a: Any, b: Any, c: Any, d: Any) -> None:
+                    await loop.run_in_executor(ex, cb, _wrap(s), a, b, c, d)
+                return hook
+
+            srv._on_connect         = _make_hook_0(self._on_connect)   # type: ignore[assignment]
+            srv._on_disconnect      = _make_hook_0(self._on_disconnect)  # type: ignore[assignment]
+            srv._on_symbol          = _make_hook_1(self._on_symbol)   # type: ignore[assignment]
+            srv._on_timeframe       = _make_hook_1(self._on_timeframe)  # type: ignore[assignment]
+            srv._on_chart_type      = _make_hook_1(self._on_chart_type)  # type: ignore[assignment]
+            srv._on_history         = _make_hook_2(self._on_history)   # type: ignore[assignment]
+            srv._on_drawing_upsert  = _make_hook_1(self._on_drawing_upsert)  # type: ignore[assignment]
+            srv._on_drawing_delete  = _make_hook_1(self._on_drawing_delete)  # type: ignore[assignment]
+            srv._on_drawings_clear  = _make_hook_0(self._on_drawings_clear)  # type: ignore[assignment]
+            srv._on_message         = _make_hook_2(self._on_message)   # type: ignore[assignment]
+            srv._on_get_symbols     = _make_hook_0(self._on_get_symbols)  # type: ignore[assignment]
+            srv._on_get_indicators  = _make_hook_0(self._on_get_indicators)  # type: ignore[assignment]
+            srv._on_layout          = _make_hook_2(self._on_layout)   # type: ignore[assignment]
+            srv._on_chart_symbol    = _make_hook_4(self._on_chart_symbol)  # type: ignore[assignment]
+            srv._on_chart_history   = _make_hook_3(self._on_chart_history)  # type: ignore[assignment]
 
             self._async_srv = srv
             self._ready.set()
