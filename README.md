@@ -863,6 +863,147 @@ ctx.add(ind, "BTCUSDT", "1h")
 
 ---
 
+## Production Deployment
+
+### Checklist
+
+```
+✅ trex.init() called with db_config and exchange namespace
+✅ trex.seed(symbol) called for every symbol before the live loop
+✅ Indicators registered before seed() — state restore depends on them
+✅ WebSocket port not blocked by firewall
+✅ Process managed by systemd / supervisor / Docker (auto-restart on crash)
+✅ PostgreSQL connection pool sized ≥ number of active symbols
+✅ Error handling around exchange feed (network drops, rate limits)
+```
+
+### systemd service
+
+```ini
+# /etc/systemd/system/trex-engine.service
+[Unit]
+Description=Trex Engine Data Server
+After=network.target postgresql.service
+
+[Service]
+User=trex
+WorkingDirectory=/opt/trex-engine
+ExecStart=/opt/trex-engine/venv/bin/python main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+sudo systemctl enable trex-engine
+sudo systemctl start  trex-engine
+sudo journalctl -u trex-engine -f   # live logs
+```
+
+### Docker
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY . .
+RUN pip install -e ".[postgres]"
+CMD ["python", "main.py"]
+```
+
+```yaml
+# docker-compose.yml
+services:
+  trex-engine:
+    build: .
+    ports: ["8765:8765"]
+    environment:
+      DB_HOST: postgres
+      DB_PASSWORD: secret
+    depends_on: [postgres]
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: okx
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+volumes:
+  pgdata:
+```
+
+### PostgreSQL setup
+
+```sql
+-- Create database and user
+CREATE DATABASE okx;
+CREATE USER trex WITH PASSWORD 'secret';
+GRANT ALL PRIVILEGES ON DATABASE okx TO trex;
+
+-- Tables are created automatically by TrexStore on first use.
+-- Each (symbol, timeframe) pair gets its own table:
+--   "binance"."BTCUSDT1M", "binance"."BTCUSDT1H", etc.
+```
+
+### Nginx WebSocket proxy (production)
+
+```nginx
+server {
+    listen 443 ssl;
+    server_name trex.your-domain.com;
+
+    location /ws {
+        proxy_pass         http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection "upgrade";
+        proxy_read_timeout 3600s;
+    }
+}
+```
+
+TrexTerminal connects to `wss://trex.your-domain.com/ws` with SSL.
+
+---
+
+## Troubleshooting
+
+### `trex.push()` raises `RuntimeError: engine not initialized`
+
+Call `trex.init()` before any other `trex.*` call. Only one `init()` call per process is allowed. To reset in tests: `trex.ctx.reset()`.
+
+### Indicators return `None` on first bars
+
+This is normal — indicators need a warmup period equal to their `period` before emitting the first value. The `listener` is not called until the value is ready.
+
+### Fast restart doesn't activate
+
+Fast restart requires **all** indicators for a `(symbol, timeframe)` to have saved state. If you add a new indicator, the system falls back to full replay automatically. After one full `seed()` pass the new state is saved.
+
+### WebSocket clients don't receive indicator data
+
+Indicators must be registered with `visible=True` to appear in the snapshot and live broadcasts. Listeners fire regardless of `visible`.
+
+### `psycopg2.OperationalError: connection refused`
+
+- PostgreSQL not running: `sudo systemctl start postgresql`
+- Wrong host/port/credentials in `DbConfig` / `ConfigPostgres`
+- Firewall blocking port 5432
+
+### High memory usage with many symbols
+
+Each symbol gets its own in-memory ring buffer (`max_bars=5000` by default). Reduce `max_bars` or `snapshot_size` in `trex.init()` for memory-constrained environments.
+
+### `KeyError` when calling `trex.indicators(symbol)`
+
+`trex.indicators()` lists registered indicators for an active symbol. If the symbol hasn't been initialized via `trex.push()` or `trex.seed()`, it may not appear. Check `trex.client_count()` and verify the symbol string matches exactly (case-sensitive).
+
+---
+
 ## Loading Candles for Backtesting
 
 `CandleSourcePostgres` streams historical OHLCV rows from a PostgreSQL table into your strategy. It is the bridge between Trex Engine's storage and the [BackTest](https://github.com/DeveloperNasirpur/BackTest) package.
