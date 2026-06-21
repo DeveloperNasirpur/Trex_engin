@@ -1,8 +1,13 @@
 from __future__ import annotations
 from collections import deque
-from typing import Callable
+from typing import Callable, NamedTuple
 from trex.base.ohlcv import ValueExtractor
 from trex.engine.indicator import Indicator
+
+
+class StochRSIVal(NamedTuple):
+    k: float
+    d: float
 
 
 class StochRSI(Indicator):
@@ -62,9 +67,10 @@ class StochRSI(Indicator):
         if len(self._d_win) == self.d_period: self._d_sum -= self._d_win[0]
         self._d_win.append(k); self._d_sum += k
         if len(self._d_win) < self.d_period: return None
-        return k
+        d = self._d_sum / self.d_period
+        return StochRSIVal(k=k, d=d)
 
-    def _calculate_new_value(self, value: float, prev) -> float:
+    def _calculate_new_value(self, value: float, prev) -> StochRSIVal:
         rsi = self._calc_rsi(value, prev)
         self._rsi_win.append(rsi)
         mn = min(self._rsi_win); mx = max(self._rsi_win)
@@ -74,7 +80,8 @@ class StochRSI(Indicator):
         k = self._k_sum / self.k_period
         if len(self._d_win) == self.d_period: self._d_sum -= self._d_win[0]
         self._d_win.append(k); self._d_sum += k
-        return k
+        d = self._d_sum / self.d_period
+        return StochRSIVal(k=k, d=d)
 
     def get_state(self) -> dict:
         s = super().get_state()

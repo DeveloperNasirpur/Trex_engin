@@ -65,16 +65,20 @@ class BaseChanel:
 
 @dataclass
 class ConfigBreak:
-    candle: OHLCV | None
-    chanel_break: bool
-    body_break: bool
-    break_by_first_candle: bool
-    break_by_first_body: bool
-    count_candle_break: int
-    count_after_break: int
-    time_break: float
-    lst_candles: list[OHLCV]
-    cal_process: Callable | None
+    candle: OHLCV | None = None
+    chanel_break: bool = False
+    body_break: bool = False
+    break_by_first_candle: bool = False
+    break_by_first_body: bool = False
+    count_candle_break: int = 0
+    count_after_break: int = 0
+    time_break: float = 0.0
+    lst_candles: list[OHLCV] = None
+    cal_process: Callable | None = None
+
+    def __post_init__(self):
+        if self.lst_candles is None:
+            self.lst_candles = []
 
 # ---------------------------------------------------------------------------
 # ZigZagBase

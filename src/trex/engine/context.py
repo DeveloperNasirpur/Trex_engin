@@ -111,6 +111,25 @@ class ContextIndicator:
         from trex.api.context_api import ContextApi
         return ContextApi(self)
 
+    def reset(self) -> None:
+        """Reset the context to its initial state so it can be re-configured.
+
+        Clears all registered indicators and CTFs.  Useful when running
+        multiple backtests in the same process.
+        """
+        self._providing = self._provide_from_first
+        self.start_provide_from = None
+        self._indicators.clear()
+        self._ctfs.clear()
+        self.initialized = False
+        self.db_config = None
+        self.fetch_size = 10_000
+        self.time_zone = "UTC"
+        self.source_timeframe = Timeframe.m1
+        self._server_broadcast_fn = None
+        self._server_define_fn = None
+        self._server_symbol_filter = None
+
     def configure(
         self,
         db_config:          Any    | None = None,
@@ -235,7 +254,7 @@ class ContextIndicator:
     def _provide_from_time(self, ohlcv: OHLCV) -> None:
         from trex.utils import date_to_milliseconds
         mil = date_to_milliseconds(ohlcv.time.strftime("%Y-%m-%d %H:%M:%S"))
-        if (self.start_provide_from or 0) < mil:
+        if (self.start_provide_from or 0) <= mil:
             self._providing = self._provide_from_first
             self._providing(ohlcv)
 

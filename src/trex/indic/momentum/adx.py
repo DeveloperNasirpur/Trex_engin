@@ -143,8 +143,6 @@ class ADX(Indicator):
         return ADXVal(adx=self._adx_s, plus_di=pdi, minus_di=ndi)
 
     def add_input_value(self, raw: object) -> None:
-        # Feed Tr first so _on_tr fires before _calculate_new_value uses _cur_tr
-        self._tr_ind.add_input_value(raw)
         self._pipe.tick(raw, self)
 
     def get_state(self) -> dict:
