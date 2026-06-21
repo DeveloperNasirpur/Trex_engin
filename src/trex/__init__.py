@@ -335,7 +335,8 @@ __all__ = [
     # Engine
     "Indicator", "Pipeline", "ContextIndicator", "IndicatorInfo", "ctx",
     # Auto API
-    "init", "push", "seed", "stop", "client_count", "broadcast_raw",
+    "init", "push", "seed", "stop", "client_count",
+    "broadcast_raw", "broadcast_drawing", "delete_drawing",
     # Trend / Moving Averages
     "sma", "ema", "wma", "hma", "dema", "tema", "zlema", "vwma", "kama",
     # Volatility (classic)
