@@ -1,8 +1,33 @@
 # Trex Engine
 
-**Production-grade Python SDK for building real-time trading data servers compatible with TrexTerminal.**
+**Production-grade Python SDK for building real-time trading data servers compatible with [TrexTerminal](https://github.com/DeveloperNasirpur/TrexTerminal).**
 
-Trex Engine provides streaming technical indicators, real-time OHLCV aggregation, PostgreSQL persistence, and a WebSocket server — all in one package with zero mandatory runtime dependencies.
+Trex Engine turns any price feed into a fully-featured trading terminal backend: 110+ streaming indicators, real-time OHLCV aggregation, PostgreSQL persistence, and a WebSocket server — all with zero mandatory runtime dependencies.
+
+---
+
+## Ecosystem
+
+```
+┌─────────────────┐      WebSocket      ┌─────────────────────┐
+│  Trex Engine    │ ──── Protocol 2.0 ─▶│   TrexTerminal      │
+│  (this package) │                     │   (browser chart)   │
+│                 │ ◀─── drawings ──── │                     │
+└────────┬────────┘                     └─────────────────────┘
+         │
+         │  PostgreSQL (OHLCV + indicators)
+         ▼
+┌─────────────────┐
+│    BackTest     │  load_postgres() ──▶ Backtest(Strategy).run(candles)
+│  (backtesting)  │
+└─────────────────┘
+```
+
+| Package | Role |
+|---------|------|
+| **Trex Engine** (this) | Live data server — indicators, storage, WebSocket |
+| [TrexTerminal](https://github.com/DeveloperNasirpur/TrexTerminal) | Browser chart client |
+| [BackTest](https://github.com/DeveloperNasirpur/BackTest) | Strategy backtesting with live chart streaming |
 
 ---
 
@@ -15,6 +40,7 @@ Trex Engine provides streaming technical indicators, real-time OHLCV aggregation
 - [Indicators Reference](#indicators-reference)
 - [API Reference](#api-reference)
 - [Database Persistence](#database-persistence)
+- [Loading Candles for Backtesting](#loading-candles-for-backtesting)
 - [State Persistence (Fast Restart)](#state-persistence-fast-restart)
 - [WebSocket Protocol](#websocket-protocol)
 - [Multi-Symbol & Multi-Timeframe](#multi-symbol--multi-timeframe)
@@ -834,6 +860,64 @@ from my_module import MyIndicator
 ind = MyIndicator(period=20)
 ctx.add(ind, "BTCUSDT", "1h")
 ```
+
+---
+
+## Loading Candles for Backtesting
+
+`CandleSourcePostgres` streams historical OHLCV rows from a PostgreSQL table into your strategy. It is the bridge between Trex Engine's storage and the [BackTest](https://github.com/DeveloperNasirpur/BackTest) package.
+
+> **Recommended:** Use `load_postgres()` from the BackTest package — it provides a clean synchronous wrapper with date filtering and returns a plain `list[OHLCV]` ready for `Backtest.run()`.
+
+### Direct usage (advanced)
+
+```python
+from trex.source.postgres import CandleSourcePostgres
+from trex.source.config import ConfigPostgres
+import trex
+
+trex.init(source_timeframe="1m")
+
+candles = []
+
+source = CandleSourcePostgres(
+    on_provide=candles.append,
+    on_finish=lambda: print(f"Loaded {len(candles)} candles"),
+)
+source.run(table_symbol="BTCUSDT1M")
+```
+
+### Expected table schema
+
+```sql
+CREATE TABLE "BTCUSDT1M" (
+    open_time  BIGINT PRIMARY KEY,   -- Unix milliseconds
+    open       DOUBLE PRECISION,
+    high       DOUBLE PRECISION,
+    low        DOUBLE PRECISION,
+    close      DOUBLE PRECISION,
+    volume     DOUBLE PRECISION,
+    symbol     TEXT
+);
+```
+
+This is the exact schema created by `TrexStore` — if you use Trex Engine in production the tables already exist.
+
+### ConfigPostgres
+
+```python
+from trex.source.config import ConfigPostgres
+
+cfg = ConfigPostgres(
+    host     = "localhost",
+    port     = 5432,
+    user     = "postgres",
+    password = "secret",
+    database = "okx",        # default
+)
+```
+
+The `ctx.db_config` attribute holds the active `ConfigPostgres` after `trex.init()` is called with a db config. `CandleSourcePostgres.run()` reads this automatically.
 
 ---
 
