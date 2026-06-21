@@ -94,6 +94,9 @@ class AutoEngine:
             log.info("AutoEngine: DB connected (exchange=%s)", exchange)
 
         # Wire server hooks before start()
+        # Playback controller (set by BackTest via trex.set_playback_controller)
+        self._playback_ctrl: Any = None
+
         self._server._on_connect        = self._on_connect
         self._server._on_history        = self._on_history
         self._server._on_symbol         = self._on_symbol
@@ -103,6 +106,7 @@ class AutoEngine:
         self._server._on_layout         = self._on_layout
         self._server._on_chart_symbol   = self._on_chart_symbol
         self._server._on_chart_history  = self._on_chart_history
+        self._server._on_bt_playback    = self._on_bt_playback_msg
 
     # ── Server event handlers ─────────────────────────────────────────────────
 
@@ -110,6 +114,48 @@ class AutoEngine:
         sym = (session.symbol or "").upper()
         tf  = session.timeframe or self._source_tf
         self._send_snapshot(session, sym, tf)
+        # If a backtest is running, immediately tell the new client
+        if self._playback_ctrl is not None:
+            ctrl = self._playback_ctrl
+            session.send_raw({
+                "type":   "bt_playback_state",
+                "active": True,
+                "paused": ctrl.paused,
+                "speed":  ctrl.speed,
+            })
+
+    def _on_bt_playback_msg(self, session: Any, action: str, value: Any) -> None:
+        """Route bt_playback message from client to the active PlaybackController."""
+        ctrl = self._playback_ctrl
+        if ctrl is None:
+            return
+        if action == "pause":
+            ctrl.pause()
+        elif action == "play":
+            ctrl.resume()
+        elif action == "speed" and value is not None:
+            ctrl.set_speed(float(value))
+        # Broadcast updated state to ALL connected clients
+        self._server.broadcast({
+            "type":   "bt_playback_state",
+            "active": True,
+            "paused": ctrl.paused,
+            "speed":  ctrl.speed,
+        })
+
+    def set_playback_controller(self, ctrl: Any) -> None:
+        """Register a PlaybackController so client bt_playback messages are forwarded."""
+        self._playback_ctrl = ctrl
+        if ctrl is None:
+            # Notify clients backtest ended
+            self._server.broadcast({"type": "bt_playback_state", "active": False})
+        else:
+            self._server.broadcast({
+                "type":   "bt_playback_state",
+                "active": True,
+                "paused": ctrl.paused,
+                "speed":  ctrl.speed,
+            })
 
     def _on_history(self, session: Any, before: int, count: int) -> None:
         sym  = (session.symbol or "").upper()

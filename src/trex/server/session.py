@@ -136,6 +136,11 @@ class OnMessageCB(Protocol):
     async def __call__(self, session: "TrexSession", msg: dict[str, Any]) -> None: ...
 
 
+@runtime_checkable
+class OnBtPlaybackCB(Protocol):
+    async def __call__(self, session: "TrexSession", action: str, value: float | None) -> None: ...
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _dump(obj: Any) -> str:
@@ -201,6 +206,7 @@ class TrexSession:
         "_on_layout",
         "_on_chart_symbol",
         "_on_chart_history",
+        "_on_bt_playback",
         # per-session secondary chart state: {chartId: {symbol, timeframe}}
         "_charts",
     )
@@ -236,6 +242,7 @@ class TrexSession:
         self._on_layout:          OnLayoutCB | None          = None
         self._on_chart_symbol:    OnChartSymbolCB | None     = None
         self._on_chart_history:   OnChartHistoryCB | None    = None
+        self._on_bt_playback:     OnBtPlaybackCB | None      = None
         # secondary chart state: {chartId: {"symbol": str, "timeframe": str}}
         self._charts: dict[str, dict[str, str]] = {}
 
@@ -369,6 +376,12 @@ class TrexSession:
                     }
                 if self._on_chart_symbol and chart_id and symbol:
                     await self._on_chart_symbol(self, chart_id, symbol, tf, inds)  # type: ignore[arg-type]
+
+            elif t == "bt_playback":
+                if self._on_bt_playback:
+                    action = str(msg.get("action", ""))
+                    value  = msg.get("value")
+                    await self._on_bt_playback(self, action, value)  # type: ignore[arg-type]
 
         except Exception:
             log.exception("[%s] dispatch error (type=%s)", self.id[:8], t)

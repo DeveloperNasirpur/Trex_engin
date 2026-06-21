@@ -237,6 +237,27 @@ def client_count() -> int:
     return _engine.client_count if _engine is not None else 0
 
 
+def set_playback_controller(ctrl: object | None) -> None:
+    """
+    Register a PlaybackController so that TrexTerminal clients can control
+    backtest replay speed/pause in real time.
+
+    Called automatically by Backtest.run() when broadcast=True.
+    Pass None to signal that the backtest has ended.
+
+    Example::
+
+        from backtest.playback import PlaybackController
+        ctrl = PlaybackController(speed=1.0)
+        trex.set_playback_controller(ctrl)
+        # ... run backtest loop ...
+        trex.set_playback_controller(None)
+    """
+    from trex.engine.auto import _engine
+    if _engine is not None:
+        _engine.set_playback_controller(ctrl)
+
+
 def broadcast_drawing(drawing: dict) -> None:
     """
     Push a drawing (position marker, order line, annotation) to all connected

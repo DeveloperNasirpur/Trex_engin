@@ -208,6 +208,9 @@ class SyncSession:
     def send_indicators_list(self, defs: list[SeriesDef]) -> bool:
         return self._run(self._session.send_indicators_list(defs))
 
+    def send_raw(self, payload: dict) -> bool:
+        return self._run(self._session._send(payload))
+
     # ── Multi-chart ───────────────────────────────────────────────────────────
 
     @property

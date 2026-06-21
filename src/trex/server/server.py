@@ -49,6 +49,7 @@ from trex.server.session import (
     OnMessageCB,
     OnGetSymbolsCB, OnGetIndicatorsCB,
     OnLayoutCB, OnChartSymbolCB, OnChartHistoryCB,
+    OnBtPlaybackCB,
 )
 from trex.domain.types import Bar, Point, SeriesDef, Drawing, ToastKind
 
@@ -112,6 +113,7 @@ class TrexServer:
         self._on_layout:          OnLayoutCB | None          = None
         self._on_chart_symbol:    OnChartSymbolCB | None     = None
         self._on_chart_history:   OnChartHistoryCB | None    = None
+        self._on_bt_playback:     OnBtPlaybackCB | None      = None
 
     # ── Decorator API ─────────────────────────────────────────────────────────
 
@@ -208,6 +210,11 @@ class TrexServer:
     def on_chart_history(self, fn: OnChartHistoryCB) -> OnChartHistoryCB:
         """Called when a secondary chart needs history. Reply with session.push_chart_history()."""
         self._on_chart_history = fn
+        return fn
+
+    def on_bt_playback(self, fn: OnBtPlaybackCB) -> OnBtPlaybackCB:
+        """Called when client sends bt_playback (play/pause/speed). Signature: (session, action, value)."""
+        self._on_bt_playback = fn
         return fn
 
     # ── Session registry ──────────────────────────────────────────────────────
@@ -389,6 +396,7 @@ class TrexServer:
         session._on_layout          = self._on_layout
         session._on_chart_symbol    = self._on_chart_symbol
         session._on_chart_history   = self._on_chart_history
+        session._on_bt_playback     = self._on_bt_playback
 
         log.info("connect  %-21s [%s]", session.remote, session.id[:8])
 
