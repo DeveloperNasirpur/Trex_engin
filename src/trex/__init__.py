@@ -258,6 +258,18 @@ def set_playback_controller(ctrl: object | None) -> None:
         _engine.set_playback_controller(ctrl)
 
 
+def broadcast_raw(payload: dict) -> None:
+    """
+    Broadcast an arbitrary dict to all connected TrexTerminal clients.
+
+    Safe to call when no clients are connected — the message is silently
+    dropped. Safe to call before ``trex.init()`` — also silently dropped.
+    """
+    from trex.engine.auto import _engine
+    if _engine is not None:
+        _engine.broadcast_raw(payload)
+
+
 def broadcast_drawing(drawing: dict) -> None:
     """
     Push a drawing (position marker, order line, annotation) to all connected
@@ -323,7 +335,7 @@ __all__ = [
     # Engine
     "Indicator", "Pipeline", "ContextIndicator", "IndicatorInfo", "ctx",
     # Auto API
-    "init", "push", "seed", "stop", "client_count",
+    "init", "push", "seed", "stop", "client_count", "broadcast_raw",
     # Trend / Moving Averages
     "sma", "ema", "wma", "hma", "dema", "tema", "zlema", "vwma", "kama",
     # Volatility (classic)

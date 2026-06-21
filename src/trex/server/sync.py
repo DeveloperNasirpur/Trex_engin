@@ -304,6 +304,7 @@ class SyncServer:
         self._on_layout:          Callable[[SyncSession, str, list], None] | None = None
         self._on_chart_symbol:    Callable[[SyncSession, str, str, str | None, list], None] | None = None
         self._on_chart_history:   Callable[[SyncSession, str, int, int], None] | None = None
+        self._on_bt_playback:     Callable[[SyncSession, str, Any], None] | None = None
 
     # ── Decorators ────────────────────────────────────────────────────────────
 
@@ -355,6 +356,10 @@ class SyncServer:
 
     def on_message(self, fn: Callable[[SyncSession, dict[str, Any]], None]) -> Callable[[SyncSession, dict[str, Any]], None]:
         self._on_message = fn;  return fn
+
+    def on_bt_playback(self, fn: Callable[["SyncSession", str, Any], None]) -> Callable[["SyncSession", str, Any], None]:
+        """Called when client sends bt_playback. Signature: (session, action, value)."""
+        self._on_bt_playback = fn;  return fn
 
     # ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -539,6 +544,7 @@ class SyncServer:
             srv._on_layout          = _make_hook_2(self._on_layout)   # type: ignore[assignment]
             srv._on_chart_symbol    = _make_hook_4(self._on_chart_symbol)  # type: ignore[assignment]
             srv._on_chart_history   = _make_hook_3(self._on_chart_history)  # type: ignore[assignment]
+            srv._on_bt_playback     = _make_hook_2(self._on_bt_playback)  # type: ignore[assignment]
 
             self._async_srv = srv
             self._ready.set()

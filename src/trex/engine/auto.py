@@ -134,7 +134,10 @@ class AutoEngine:
         elif action == "play":
             ctrl.resume()
         elif action == "speed" and value is not None:
-            ctrl.set_speed(float(value))
+            try:
+                ctrl.set_speed(float(value))
+            except (TypeError, ValueError):
+                return
         # Broadcast updated state to ALL connected clients
         self._server.broadcast({
             "type":   "bt_playback_state",
@@ -142,6 +145,11 @@ class AutoEngine:
             "paused": ctrl.paused,
             "speed":  ctrl.speed,
         })
+
+    def broadcast_raw(self, payload: dict) -> None:
+        """Broadcast an arbitrary dict to all connected clients."""
+        if self._server is not None:
+            self._server.broadcast(payload)
 
     def set_playback_controller(self, ctrl: Any) -> None:
         """Register a PlaybackController so client bt_playback messages are forwarded."""
