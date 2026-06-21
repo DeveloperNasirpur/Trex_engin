@@ -183,7 +183,7 @@ class ContextIndicator:
         Returns:
             The registered :class:`~trex.engine.indicator.Indicator` instance.
         """
-        key = Indicator.make_key.__func__(cnl, tf=timeframe, symbol=symbol, **params)  # type: ignore[attr-defined]
+        key = cnl.make_key(tf=timeframe, symbol=symbol, **params)  # type: ignore[attr-defined]
 
         with self._lock:
             bucket = self._indicators.setdefault(symbol, {})

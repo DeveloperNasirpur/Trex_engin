@@ -152,9 +152,33 @@ def _do_register(cls: Type[Indicator], name: str | None) -> Type[Indicator]:
         )
 
     _REGISTRY[method_name] = cls
+    _override_make_key(cls)          # stable key regardless of user's module path
     _inject_into_context_api(method_name, cls)
     _inject_into_global_api(method_name, cls)
     return cls
+
+
+def _override_make_key(cls: Type[Indicator]) -> None:
+    """
+    Override make_key on the plugin class so its context key follows the
+    same pattern as built-in indicators but with a stable ``trex.plugin.``
+    prefix — independent of where the user's module lives.
+
+    Built-in:  ``trex.indic.trend.ema.EMA|sym=BTCUSDT|tf=1h|period=14``
+    Plugin:    ``trex.plugin.MyInd|sym=BTCUSDT|tf=1h|period=14``
+    """
+    ind_name = getattr(cls, "_ind_name", cls.__name__)
+
+    @classmethod  # type: ignore[misc]
+    def _plugin_make_key(klass: type, tf: str = Timeframe.m1, symbol: str = "", **params: Any) -> str:
+        base   = f"trex.plugin.{ind_name}|sym={symbol}|tf={tf}"
+        extras = "|".join(
+            f"{k}={Indicator._fmt_param(v)}"
+            for k, v in sorted(params.items())
+        )
+        return f"{base}|{extras}" if extras else base
+
+    cls.make_key = _plugin_make_key  # type: ignore[method-assign]
 
 
 def _inject_into_context_api(name: str, cls: Type[Indicator]) -> None:
