@@ -3,6 +3,7 @@ import atexit as _atexit
 
 from trex.base import OHLCV, OHLCVFactory, ValueExtractor, Timeframe, ListenerKey
 from trex.engine import Indicator, Pipeline, ContextIndicator, ctx
+from trex import plugin
 from trex.engine.context import IndicatorInfo
 from trex.api import (
     # ── Trend / Moving Averages ────────────────────────────────────────────────
@@ -336,4 +337,6 @@ __all__ = [
     "de_attach", "de_attach_by_key", "indicators",
     "attach_listener_timeframe", "de_attach_listener_timeframe",
     "start_history_provide",
+    # Plugin system
+    "plugin",
 ]
