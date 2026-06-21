@@ -34,15 +34,23 @@ class HMA(Indicator):
         self.keys:  list[ListenerKey] = []
 
     def init_depends(self) -> None:
-        p = self.period
-        self.keys.append(api.wma(self.context_symbol, self.tf, p,         self._ve, self._on_full))
-        self.keys.append(api.wma(self.context_symbol, self.tf, p // 2,    self._ve, self._on_half))
+        api = self._ctx.api
+        p   = self.period
+        sym, tf = self.context_symbol, self.tf
+        full_key = api.wma(sym, tf, p,      self._ve, self._on_full)
+        half_key = api.wma(sym, tf, p // 2, self._ve, self._on_half)
+        self.keys.append(full_key)
+        self.keys.append(half_key)
+
+        bucket = self._ctx._indicators.get(sym, {})
+        self._wma_full = bucket.get(full_key.indicator)
+        self._wma_half = bucket.get(half_key.indicator)
 
         sqrt_p = isqrt(p)
         self._wma_sqrt = WMA(period=sqrt_p, value_extractor=None)
         self._wma_sqrt.context_key    = f"{self.context_key}:wma_sqrt"
-        self._wma_sqrt.context_symbol = self.context_symbol
-        self._wma_sqrt.tf             = self.tf
+        self._wma_sqrt.context_symbol = sym
+        self._wma_sqrt.tf             = tf
         self._wma_sqrt.source_tf      = self.source_tf
         self._wma_sqrt.init_depends()
         self._wma_sqrt.add_callback_listener(self.context_key, self._on_sqrt)

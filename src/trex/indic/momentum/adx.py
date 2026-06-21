@@ -77,6 +77,7 @@ class ADX(Indicator):
         self.tr_keys:ListenerKey|None = None
 
     def init_depends(self) -> None:
+        api = self._ctx.api
         self.tr_keys = api.tr(self.context_symbol, self.tf, self._on_tr)
 
     def dispatch(self) -> None:

@@ -77,7 +77,8 @@ class Supertrend(Indicator):
         self.atr_keys:ListenerKey|None = None
 
     def init_depends(self) -> None:
-        self.atr_keys = api.atr(self.context_symbol,self.tf,self.period, self._on_atr)
+        api = self._ctx.api
+        self.atr_keys = api.atr(self.context_symbol, self.tf, self.period, self._on_atr)
 
     def dispatch(self) -> None:
         api = self._ctx.api

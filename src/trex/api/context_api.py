@@ -71,6 +71,20 @@ class ContextApi:
         return self._register(WMA, symbol, timeframe, listener,
                                period=period, value_extractor=value_extractor)
 
+    def dema(self, symbol: str, timeframe: str = Timeframe.m1, period: int = 14,
+             value_extractor: Callable[..., Any] = ValueExtractor.extract_close,
+             listener: Callable[[Any], None] | None = None) -> ListenerKey:
+        from trex.indic.trend.dema import DEMA
+        return self._register(DEMA, symbol, timeframe, listener,
+                               period=period, value_extractor=value_extractor)
+
+    def tema(self, symbol: str, timeframe: str = Timeframe.m1, period: int = 14,
+             value_extractor: Callable[..., Any] = ValueExtractor.extract_close,
+             listener: Callable[[Any], None] | None = None) -> ListenerKey:
+        from trex.indic.trend.tema import TEMA
+        return self._register(TEMA, symbol, timeframe, listener,
+                               period=period, value_extractor=value_extractor)
+
     def hma(self, symbol: str, timeframe: str = Timeframe.m1, period: int = 10,
             value_extractor: Callable[..., Any] = ValueExtractor.extract_close,
             listener: Callable[[Any], None] | None = None) -> ListenerKey:

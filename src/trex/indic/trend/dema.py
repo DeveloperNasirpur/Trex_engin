@@ -36,7 +36,7 @@ class DEMA(Indicator):
         self.key: ListenerKey | None = None
 
     def init_depends(self) -> None:
-        from trex.api.api import api
+        api = self._ctx.api
         p = self.period
         self.key = api.ema(self.context_symbol, self.tf, p, self._ve, self._on_ema1)
 
@@ -49,8 +49,7 @@ class DEMA(Indicator):
         self._ema2.add_callback_listener(self.context_key, self._on_ema2)
 
     def dispatch(self) -> None:
-        from trex.api.api import api
-        api.de_attach_by_key(self.key)
+        self._ctx.api.de_attach_by_key(self.key)
         del self._ema2
 
     def _on_ema1(self, val: float) -> None:
@@ -63,8 +62,8 @@ class DEMA(Indicator):
             self.emit(2.0 * self._ema1_val - val)
 
     def add_input_value(self, raw: object) -> None:
-        if self._ema1:
-            self._ema1.add_input_value(raw)
+        # EMA₁ is registered in the same CTF and receives input directly.
+        pass
 
     def _first_calculate(self, value: ValueType, prev: ValueType) -> bool:
         return True

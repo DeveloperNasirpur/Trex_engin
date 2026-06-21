@@ -61,9 +61,10 @@ class TEMA(Indicator):
         self.key:ListenerKey|None = None
 
     def init_depends(self) -> None:
+        api = self._ctx.api
         sym, tf, ve, p = self.context_symbol, self.tf, self._ve, self.period
 
-        self.key = api.ema(sym, tf, p,ve, self._on_ema1)
+        self.key = api.ema(sym, tf, p, ve, self._on_ema1)
 
         self._ema2 = EMA(period=p, value_extractor=None)
         self._ema2.context_key = f"{self.context_key}:ema2"
@@ -102,7 +103,8 @@ class TEMA(Indicator):
             self.emit(3.0 * e1 - 3.0 * e2 + val)
 
     def add_input_value(self, raw: object) -> None:
-        self._ema1.add_input_value(raw)
+        # EMA₁ is registered in the same CTF and receives input directly.
+        pass
 
     def _first_calculate(self, value: ValueType, prev: ValueType) -> bool:
         return True

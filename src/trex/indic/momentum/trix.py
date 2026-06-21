@@ -55,7 +55,8 @@ class TRIX(Indicator):
         self._tema = None
         self.keys:ListenerKey|None = None
     def init_depends(self) -> None:
-        self.keys = api.tema(self.context_symbol, self.tf,self.period, self._ve, self._on_tema)
+        api = self._ctx.api
+        self.keys = api.tema(self.context_symbol, self.tf, self.period, self._ve, self._on_tema)
 
     def dispatch(self) -> None:
         api = self._ctx.api

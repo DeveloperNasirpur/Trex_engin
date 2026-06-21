@@ -62,9 +62,10 @@ class KeltnerChannel(Indicator):
         pass
 
     def init_depends(self) -> None:
+        api = self._ctx.api
         sym, tf = self.context_symbol, self.tf
-        self.keys.append(api.ema(sym, tf,self.period,ValueExtractor.extract_close, self._on_ema))
-        self.keys.append(api.atr(sym, tf,self.period,ValueExtractor.extract_close, self._on_atr))
+        self.keys.append(api.ema(sym, tf, self.period, ValueExtractor.extract_close, self._on_ema))
+        self.keys.append(api.atr(sym, tf, self.atr_period, self._on_atr))
 
     def dispatch(self) -> None:
         api = self._ctx.api

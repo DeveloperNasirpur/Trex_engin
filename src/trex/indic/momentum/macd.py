@@ -139,9 +139,8 @@ class MACD(Indicator):
             self.emit(MACDVal(macd=macd, signal=sig, histogram=macd - sig))
 
     def add_input_value(self, raw: object) -> None:
-        # Feed both shared EMAs (they each need the same bar)
-        self._ema_fast.add_input_value(raw)
-        self._ema_slow.add_input_value(raw)
+        # Sub-EMAs are registered in the same CTF and receive input directly.
+        pass
 
     def _first_calculate(self, value: ValueType, prev: ValueType) -> bool:
         return True
