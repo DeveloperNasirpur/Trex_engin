@@ -7,7 +7,7 @@ name = "trex-engine"
 version = "2.0.0"
 description = "Streaming technical indicator engine — production-grade, Python 3.12+"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = []
 
