@@ -134,12 +134,6 @@ class Supertrend(Indicator):
             return None
         return self._trend_step(ohlcv, atr)
 
-    def add_input_value(self, raw: object) -> None:
-        # In standalone mode: feed Tr first (so ATR callback fires before user)
-        # then feed own user
-        self._atr_ind._tr.add_input_value(raw)
-        self._pipe.tick(raw, self)
-
     def series_defs(self):
         from trex.presentation.indicators import Overlay
         return [Overlay.supertrend(self.period, self.multiplier, key=self.indicator_key())]

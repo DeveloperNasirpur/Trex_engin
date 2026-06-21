@@ -69,7 +69,8 @@ class TRIX(Indicator):
             self.emit((val - prev) / prev * 100.0)
 
     def add_input_value(self, raw: object) -> None:
-        self._tema.add_input_value(raw)
+        # TEMA is fed directly by CTF; pipeline tick is a no-op for TRIX.
+        pass
 
     def _first_calculate(self, value: ValueType, prev: ValueType) -> bool:
         return True
