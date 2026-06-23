@@ -325,6 +325,9 @@ def delete_drawing(drawing_id: str) -> None:
 
 # ── Re-exports ────────────────────────────────────────────────────────────────
 
+from trex.source.binance import CandleSourceBinance
+from trex.source.postgres import CandleSourcePostgres
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from trex.domain.types import Bar
@@ -373,4 +376,7 @@ __all__ = [
     "start_history_provide",
     # Plugin system
     "plugin",
+    # Data sources
+    "CandleSourceBinance",
+    "CandleSourcePostgres",
 ]
