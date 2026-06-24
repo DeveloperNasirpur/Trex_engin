@@ -7,23 +7,24 @@ Binance Public REST API — 1-minute candle source.
 CTF (ConvertTimeFrame) تبدیل به تایم‌فریم بالاتر را انجام می‌دهد.
 
 استفاده live (با trex engine):
-    src = CandleSourceBinance("BTCUSDT", days=90)
-    src.run()   # → ctx.provide() → CTF → indicators → TrexTerminal
+    import trex
+    trex.init(port=8765)
+    trex.rsi("BTCUSDT", "1h", period=14, visible=True)
 
-استفاده در BackTest:
     src = CandleSourceBinance("BTCUSDT", days=90)
-    # BackTest به صورت خودکار on_provide را تنظیم می‌کند
-    result = Backtest(MyStrategy).run(src)
+    src.run()   # → trex.push() → store + broadcast + CTF + indicators → TrexTerminal
 """
 
 import time
 import json
 import urllib.request
 from datetime import datetime, timezone
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 
-from trex.base.ohlcv import OHLCV
 from trex.source.candle_source import CandleSource
+
+if TYPE_CHECKING:
+    from trex.domain.types import Bar
 
 _API_URL = "https://api.binance.com/api/v3/klines"
 _BATCH   = 1000
@@ -42,20 +43,32 @@ def _parse_date(value: str | datetime) -> int:
     raise ValueError(f"فرمت تاریخ نامعتبر: '{value}' — از 'YYYY-MM-DD' استفاده کنید")
 
 
-def _row_to_ohlcv(row: list, symbol: str) -> OHLCV:
-    o = float(row[1]); c = float(row[4])
-    return OHLCV(
-        open=o, high=float(row[2]), low=float(row[3]), close=c,
+def _row_to_bar(row: list) -> "Bar":
+    """تبدیل یک ردیف Binance klines API به Bar."""
+    from trex.domain.types import Bar
+    return Bar(
+        time=int(row[0]) // 1000,   # ms → unix-seconds
+        open=float(row[1]),
+        high=float(row[2]),
+        low=float(row[3]),
+        close=float(row[4]),
         volume=float(row[5]),
-        time=datetime.fromtimestamp(int(row[0]) / 1000, tz=timezone.utc),
-        side=0 if o >= c else 1,
-        timeframe=1, str_time="1m", symbol=symbol,
     )
 
 
 class CandleSourceBinance(CandleSource):
     """
-    Binance 1-minute candle source.
+    Binance 1-minute candle source (live streaming).
+
+    در live mode با trex.init() استفاده می‌شود:
+        src = CandleSourceBinance("BTCUSDT", days=90)
+        src.run()
+        # → trex.push(bar) → MultiSymbolStore + broadcast_bar + CTF + indicators
+
+    اگر on_provide تنظیم شود، آن callback صدا زده می‌شود به جای trex.push():
+        src = CandleSourceBinance("BTCUSDT", days=90)
+        src.on_provide = my_custom_handler   # Callable[[Bar], None]
+        src.run()
 
     پارامترها
     ----------
@@ -64,38 +77,35 @@ class CandleSourceBinance(CandleSource):
     start      : تاریخ شروع — "YYYY-MM-DD"
     end        : تاریخ پایان — "YYYY-MM-DD" (پیش‌فرض: الان)
     limit      : حداکثر تعداد کندل 1m
-    on_provide : callback خارجی — اگر نداد، ctx.provide() صدا زده می‌شود
-
-    مثال live:
-        CandleSourceBinance("BTCUSDT", days=90).run()
-
-    مثال BackTest:
-        Backtest(MyStrategy).run(CandleSourceBinance("BTCUSDT", days=90))
+    on_provide : callback سفارشی با signature Callable[[Bar], None]
+                 اگر None باشد: trex.push() صدا زده می‌شود (live mode)
     """
 
     def __init__(
         self,
         symbol:     str,
         *,
-        days:       int | None                  = None,
-        start:      str | datetime | None       = None,
-        end:        str | datetime | None       = None,
-        limit:      int | None                  = None,
-        on_provide: Callable[[OHLCV], None] | None = None,
+        days:       int | None                     = None,
+        start:      str | datetime | None          = None,
+        end:        str | datetime | None          = None,
+        limit:      int | None                     = None,
+        on_provide: "Callable[[Bar], None] | None" = None,
     ) -> None:
         self.symbol     = symbol.upper()
         self.days       = days
         self.start      = start
         self.end        = end
         self.limit      = limit
-        self.on_provide = on_provide  # BackTest این را از بیرون تنظیم می‌کند
+        self.on_provide = on_provide
 
     def run(self, symbol: str | None = None) -> None:
         """
-        دانلود 1m کندل و feed کردن از طریق on_provide callback.
+        دانلود 1m کندل و feed کردن از طریق trex.push() یا on_provide callback.
 
-        - اگر on_provide تنظیم شده باشد (BackTest): آن را صدا می‌زند
-        - اگر on_provide نباشد (live): ctx.provide() صدا زده می‌شود
+        - اگر on_provide تنظیم شده: آن callback با Bar صدا زده می‌شود
+        - اگر on_provide نباشد (live): trex.push(bar, symbol) صدا زده می‌شود
+          که AutoEngine را trigger می‌کند:
+          store.update() + broadcast_bar() + ctx.provide() → CTF + indicators
 
         هیچ چیزی return نمی‌شود.
         """
@@ -105,8 +115,16 @@ class CandleSourceBinance(CandleSource):
         if self.on_provide is not None:
             _emit = self.on_provide
         else:
-            from trex.engine.context import ctx
-            _emit = ctx.provide
+            from trex.engine.auto import _engine
+            if _engine is None:
+                raise RuntimeError(
+                    "CandleSourceBinance.run() در live mode نیاز به trex.init() دارد."
+                    " قبل از run() باید trex.init() فراخوانی شود."
+                )
+            _sym = sym
+            _eng = _engine
+            def _emit(bar: "Bar") -> None:
+                _eng.push(bar, symbol=_sym)
 
         # محاسبه بازه زمانی
         now_ms = int(time.time() * 1000)
@@ -153,7 +171,7 @@ class CandleSourceBinance(CandleSource):
                 break
 
             for row in rows:
-                _emit(_row_to_ohlcv(row, sym))
+                _emit(_row_to_bar(row))
                 count += 1
 
             cursor = int(rows[-1][0]) + tf_ms

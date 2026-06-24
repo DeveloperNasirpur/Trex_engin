@@ -685,4 +685,7 @@ __all__ = [
     "OnHistoryCB",
     "OnDrawingUpsertCB", "OnDrawingDeleteCB", "OnDrawingsClearCB",
     "OnMessageCB",
+    "OnGetSymbolsCB", "OnGetIndicatorsCB",
+    "OnLayoutCB", "OnChartSymbolCB", "OnChartHistoryCB",
+    "OnBtPlaybackCB",
 ]
