@@ -234,7 +234,7 @@ class AutoEngine:
         self, session: Any, chart_id: str, before: int, count: int
     ) -> None:
         """Reply to secondary-chart history request."""
-        chart_state = session._charts.get(chart_id, {})
+        chart_state = session.charts.get(chart_id, {})
         sym = chart_state.get("symbol", "").upper()
         tf  = chart_state.get("timeframe", self._source_tf)
         if sym:
